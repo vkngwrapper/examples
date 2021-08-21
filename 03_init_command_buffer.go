@@ -2,11 +2,18 @@ package main
 
 import (
 	"github.com/CannibalVox/VKng"
+	"github.com/CannibalVox/cgoalloc"
 	"log"
 )
 
 func init_command_buffer() {
-	alloc := &VKng.DefaultAllocator{}
+	defAlloc := &cgoalloc.DefaultAllocator{}
+	fbAlloc, err := cgoalloc.CreateFixedBlockAllocator(defAlloc, 1024*1024, 256, 8)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	alloc := cgoalloc.CreateThresholdAllocator(256, defAlloc, fbAlloc)
+
 	i, err := (&VKng.InstanceBuilder{}).
 		ApplicationName("Hello Triangle").
 		ApplicationVersion(1, 0, 0).

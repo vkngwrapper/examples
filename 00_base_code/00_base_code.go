@@ -1,17 +1,15 @@
 package main
 
 import (
-	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/cgoalloc"
-	"github.com/veandco/go-sdl2/sdl"
 	"log"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
 	window *sdl.Window
-
-	instance *VKng.Instance
 }
 
 func (app *HelloTriangleApplication) Run() error {
@@ -39,28 +37,13 @@ func (app *HelloTriangleApplication) initWindow() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) createInstance() error {
-	i, err := (&VKng.InstanceBuilder{}).
-		ApplicationName("Hello Triangle").
-		ApplicationVersion(1, 0, 0).
-		EngineName("No Engine").
-		EngineVersion(1, 0, 0).
-		Build(app.allocator)
-	if err != nil {
-		return err
-	}
-	app.instance = i
+func (app *HelloTriangleApplication) initVulkan() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) initVulkan() error {
-	return app.createInstance()
-}
-
 func (app *HelloTriangleApplication) cleanup() {
-	app.instance.Destroy()
-
 	app.allocator.Destroy()
+
 	app.window.Destroy()
 	sdl.Quit()
 }
