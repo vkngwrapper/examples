@@ -31,6 +31,12 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 		return err
 	}
 
+	queue, err := logicalDevice.GetQueue(queueFamilyIndex, 0)
+	if err != nil {
+		return err
+	}
+
 	app.logicalDevice = logicalDevice
+	app.queue = queue 
 	return nil
 }

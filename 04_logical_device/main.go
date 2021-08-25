@@ -20,6 +20,7 @@ type HelloTriangleApplication struct {
 	debugMessenger *ext_debugutils.Messenger
 	physicalDevice *objects.PhysicalDevice
 	logicalDevice *objects.Device
+	queue *objects.Queue
 }
 
 func (app *HelloTriangleApplication) Run() error {
