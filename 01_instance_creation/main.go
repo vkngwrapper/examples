@@ -1,15 +1,20 @@
 package main
 
 import (
+	"github.com/CannibalVox/VKng"
+	"github.com/CannibalVox/VKng/creation"
+	"github.com/CannibalVox/VKng/ext_debugutils"
+	"github.com/CannibalVox/VKng/objects"
 	"github.com/CannibalVox/cgoalloc"
-	"log"
-
 	"github.com/veandco/go-sdl2/sdl"
+	"log"
 )
 
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
 	window *sdl.Window
+
+	instance *objects.Instance
 }
 
 func (app *HelloTriangleApplication) Run() error {
@@ -24,11 +29,11 @@ func (app *HelloTriangleApplication) Run() error {
 }
 
 func (app *HelloTriangleApplication) initWindow() error {
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
 		return err
 	}
 
-	window, err := sdl.CreateWindow("Vulkan", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_SHOWN)
+	window, err := sdl.CreateWindow("Vulkan", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, 800, 600, sdl.WINDOW_SHOWN|sdl.WINDOW_VULKAN)
 	if err != nil {
 		return err
 	}
@@ -37,15 +42,42 @@ func (app *HelloTriangleApplication) initWindow() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) initVulkan() error {
+func (app *HelloTriangleApplication) createInstance() error {
+	sdlExtensions := app.window.VulkanGetInstanceExtensions()
+
+	extensions := append(sdlExtensions, ext_debugutils.ExtensionName)
+
+	i, err := objects.CreateInstance(app.allocator,
+		&creation.InstanceOptions{
+			ApplicationName:    "Hello Triangle",
+			ApplicationVersion: VKng.CreateVersion(1, 0, 0),
+			EngineName:         "No Engine",
+			EngineVersion:      VKng.CreateVersion(1, 0, 0),
+			ExtensionNames:     extensions,
+		})
+	if err != nil {
+		return err
+	}
+
+	app.instance = i
 	return nil
 }
 
-func (app *HelloTriangleApplication) cleanup() {
-	app.allocator.Destroy()
+func (app *HelloTriangleApplication) initVulkan() error {
+	return app.createInstance()
+}
 
-	app.window.Destroy()
+func (app *HelloTriangleApplication) cleanup() {
+	if app.instance != nil {
+		app.instance.Destroy()
+	}
+
+	if app.window != nil {
+		app.window.Destroy()
+	}
 	sdl.Quit()
+
+	app.allocator.Destroy()
 }
 
 func (app *HelloTriangleApplication) mainLoop() error {
