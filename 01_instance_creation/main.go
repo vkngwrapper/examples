@@ -54,6 +54,7 @@ func (app *HelloTriangleApplication) createInstance() error {
 			EngineName:         "No Engine",
 			EngineVersion:      VKng.CreateVersion(1, 0, 0),
 			ExtensionNames:     extensions,
+			VulkanVersion: 		creation.Vulkan1_2,
 		})
 	if err != nil {
 		return err
