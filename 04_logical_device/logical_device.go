@@ -37,6 +37,6 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 	}
 
 	app.logicalDevice = logicalDevice
-	app.queue = queue 
+	app.queue = queue
 	return nil
 }
