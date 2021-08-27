@@ -8,12 +8,12 @@ import (
 )
 
 func (app *HelloTriangleApplication) rateDeviceSuitability(device *objects.PhysicalDevice) int {
-	properties, err := device.GetProperties(app.allocator)
+	properties, err := device.Properties(app.allocator)
 	if err != nil {
 		log.Printf("could not get physical device properties: %v\n", err)
 		return 0
 	}
-	features, err := device.GetFeatures(app.allocator)
+	features, err := device.Features(app.allocator)
 	if err != nil {
 		log.Printf("could not get physical device features: %v\n", err)
 		return 0

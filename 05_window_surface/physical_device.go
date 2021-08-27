@@ -8,12 +8,12 @@ import (
 )
 
 func (app *HelloTriangleApplication) rateDeviceSuitability(device *objects.PhysicalDevice) int {
-	properties, err := device.GetProperties(app.allocator)
+	properties, err := device.Properties(app.allocator)
 	if err != nil {
 		log.Printf("could not get physical device properties: %v\n", err)
 		return 0
 	}
-	features, err := device.GetFeatures(app.allocator)
+	features, err := device.Features(app.allocator)
 	if err != nil {
 		log.Printf("could not get physical device features: %v\n", err)
 		return 0
@@ -32,7 +32,7 @@ func (app *HelloTriangleApplication) rateDeviceSuitability(device *objects.Physi
 	foundGraphics := false
 	foundPresentation := false
 	for queueFamilyIndex, queueFamily := range queueFamilies {
-		if !app.surface.CanBePresentedBy(device, queueFamilyIndex) {
+		if !app.surface.SupportsDevice(device, queueFamilyIndex) {
 			foundPresentation = true
 		}
 		if queueFamily.Flags & VKng.Graphics != 0 {

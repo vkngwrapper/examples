@@ -3,34 +3,22 @@ package main
 import (
 	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/VKng/creation"
+	"github.com/CannibalVox/VKng/ext_swapchain"
 )
 
-func (app *HelloTriangleApplication) createLogicalDevice() error {
-	queueFamilies, err := app.physicalDevice.QueueFamilyProperties(app.allocator)
-	if err != nil {
-		return err
-	}
-
-	graphicsQueueFamily := -1
-	presentationQueueFamily := -1
-	for i := 0; i < len(queueFamilies); i++ {
-		if presentationQueueFamily < 0 && app.surface.SupportsDevice(app.physicalDevice, i) {
-			presentationQueueFamily = i
-		}
-		if graphicsQueueFamily < 0 && queueFamilies[i].Flags & VKng.Graphics != 0 {
-			graphicsQueueFamily = i
-		}
-	}
+func (app *HelloTriangleApplication) createLogicalDevice(caps *PhysicalDeviceCaps) error {
+	graphicsFamily := *caps.GraphicsQueueFamily
+	presentFamily := *caps.PresentQueueFamily
 
 	var queueFamilyOptions []*creation.QueueFamilyOptions
 	queueFamilyOptions = append(queueFamilyOptions, &creation.QueueFamilyOptions{
-		QueueFamilyIndex: graphicsQueueFamily,
+		QueueFamilyIndex: graphicsFamily,
 		QueuePriorities: []float32{1.0},
 	})
 
-	if graphicsQueueFamily != presentationQueueFamily {
+	if graphicsFamily != presentFamily {
 		queueFamilyOptions = append(queueFamilyOptions, &creation.QueueFamilyOptions{
-			QueueFamilyIndex: presentationQueueFamily,
+			QueueFamilyIndex: presentFamily,
 			QueuePriorities: []float32{1.0},
 		})
 	}
@@ -38,17 +26,20 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 	logicalDevice, err := app.physicalDevice.CreateDevice(app.allocator, &creation.DeviceOptions{
 		QueueFamilies: queueFamilyOptions,
 		EnabledFeatures: &VKng.PhysicalDeviceFeatures{},
+		ExtensionNames: []string {
+			ext_swapchain.ExtensionName,
+		},
 	})
 	if err != nil {
 		return err
 	}
 
-	graphicsQueue, err := logicalDevice.GetQueue(graphicsQueueFamily, 0)
+	graphicsQueue, err := logicalDevice.GetQueue(graphicsFamily, 0)
 	if err != nil {
 		return err
 	}
 
-	presentationQueue, err := logicalDevice.GetQueue(presentationQueueFamily, 0)
+	presentationQueue, err := logicalDevice.GetQueue(presentFamily, 0)
 	if err != nil {
 		return err
 	}
