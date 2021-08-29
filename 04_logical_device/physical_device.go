@@ -31,7 +31,7 @@ func (app *HelloTriangleApplication) rateDeviceSuitability(device *VKng.Physical
 
 	foundGraphics := false
 	for _, queueFamily := range queueFamilies {
-		if queueFamily.Flags &core.Graphics != 0 {
+		if queueFamily.Flags&core.Graphics != 0 {
 			foundGraphics = true
 			break
 		}
@@ -42,7 +42,7 @@ func (app *HelloTriangleApplication) rateDeviceSuitability(device *VKng.Physical
 	}
 
 	score := int(properties.Limits.MaxImageDimension2D)
-	if properties.Type == core.DiscreteGPU {
+	if properties.Type == core.DeviceDiscreteGPU {
 		score += 1000
 	}
 

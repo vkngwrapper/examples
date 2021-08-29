@@ -98,7 +98,7 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 		RasterizerDiscard: false,
 
 		PolygonMode: pipeline.ModeFill,
-		CullMode:    core.Back,
+		CullMode:    core.CullBack,
 		FrontFace:   core.Clockwise,
 
 		DepthBias: false,
@@ -114,21 +114,21 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 
 	_ = &pipeline.ColorBlendOptions{
 		LogicOpEnabled: false,
-		LogicOp:        core.OpCopy,
+		LogicOp:        core.LogicOpCopy,
 
 		BlendConstants: [4]float32{0, 0, 0, 0},
 		Attachments: []pipeline.ColorBlendAttachment{
 			{
 				BlendEnabled: true,
-				SrcColor:     pipeline.BlendSrcAlpha,
-				DstColor:     pipeline.BlendOneMinusSrcAlpha,
-				ColorBlendOp: pipeline.OpAdd,
+				SrcColor:     core.BlendSrcAlpha,
+				DstColor:     core.BlendOneMinusSrcAlpha,
+				ColorBlendOp: core.BlendOpAdd,
 
-				SrcAlpha:     pipeline.BlendOne,
-				DstAlpha:     pipeline.BlendZero,
-				AlphaBlendOp: pipeline.OpAdd,
+				SrcAlpha:     core.BlendOne,
+				DstAlpha:     core.BlendZero,
+				AlphaBlendOp: core.BlendOpAdd,
 
-				WriteMask: pipeline.ComponentRed | pipeline.ComponentGreen | pipeline.ComponentBlue | pipeline.ComponentAlpha,
+				WriteMask: core.ComponentRed | core.ComponentGreen | core.ComponentBlue | core.ComponentAlpha,
 			},
 		},
 	}

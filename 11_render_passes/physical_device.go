@@ -42,7 +42,7 @@ func (c *PhysicalDeviceCaps) Suitability() int {
 	}
 
 	score := int(c.Properties.Limits.MaxImageDimension2D)
-	if c.Properties.Type == core.DiscreteGPU {
+	if c.Properties.Type == core.DeviceDiscreteGPU {
 		score += 1000
 	}
 

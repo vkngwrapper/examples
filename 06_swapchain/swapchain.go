@@ -12,7 +12,7 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 
 	// Find best surface format
 	for _, format := range caps.SurfaceFormats {
-		if bestFormatValue < 2 && format.ColorSpace == ext_surface.SRGBNonlinear && format.Format == core.B8G8R8A8SRGB {
+		if bestFormatValue < 2 && format.ColorSpace == ext_surface.SRGBNonlinear && format.Format == core.FormatB8G8R8A8SRGB {
 			bestFormatValue = 2
 			bestFormat = format
 		} else if bestFormatValue < 1 && format.ColorSpace == ext_surface.SRGBNonlinear {
@@ -59,16 +59,16 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 		swapExtent.Height = height
 	}
 
-	swapDepth := caps.SurfaceCaps.MinImageCount+1
+	swapDepth := caps.SurfaceCaps.MinImageCount + 1
 	if caps.SurfaceCaps.MaxImageCount > 0 && caps.SurfaceCaps.MaxImageCount < swapDepth {
 		swapDepth = caps.SurfaceCaps.MaxImageCount
 	}
 
-	sharingMode := core.Exclusive
+	sharingMode := core.SharingExclusive
 	var queueFamilyIndices []int
 
 	if *caps.GraphicsQueueFamily != *caps.PresentQueueFamily {
-		sharingMode = core.Concurrent
+		sharingMode = core.SharingConcurrent
 		queueFamilyIndices = append(queueFamilyIndices, *caps.GraphicsQueueFamily, *caps.PresentQueueFamily)
 	}
 
@@ -80,15 +80,15 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 		ImageColorSpace:  bestFormat.ColorSpace,
 		ImageExtent:      swapExtent,
 		ImageArrayLayers: 1,
-		ImageUsage:       core.ColorAttachment,
+		ImageUsage:       core.UsageColorAttachment,
 
-		SharingMode: sharingMode,
+		SharingMode:        sharingMode,
 		QueueFamilyIndices: queueFamilyIndices,
 
-		PreTransform: caps.SurfaceCaps.CurrentTransform,
+		PreTransform:   caps.SurfaceCaps.CurrentTransform,
 		CompositeAlpha: ext_surface.Opaque,
-		PresentMode: presentMode,
-		Clipped: true,
+		PresentMode:    presentMode,
+		Clipped:        true,
 	})
 	if err != nil {
 		return err

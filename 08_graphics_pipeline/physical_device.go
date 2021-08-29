@@ -12,27 +12,37 @@ import (
 
 type PhysicalDeviceCaps struct {
 	Properties *core.PhysicalDeviceProperties
-	Features *core.PhysicalDeviceFeatures
+	Features   *core.PhysicalDeviceFeatures
 
 	GraphicsQueueFamily *int
-	PresentQueueFamily *int
+	PresentQueueFamily  *int
 
 	Extensions map[string]*core.ExtensionProperties
 
-	SurfaceCaps *ext_surface.Capabilities
-	SurfaceFormats []*ext_surface.SurfaceFormat
+	SurfaceCaps         *ext_surface.Capabilities
+	SurfaceFormats      []*ext_surface.SurfaceFormat
 	SurfacePresentModes []ext_surface.PresentMode
 }
 
 func (c *PhysicalDeviceCaps) Suitability() int {
-	if !c.Features.GeometryShader { return 0 }
-	if c.GraphicsQueueFamily == nil || c.PresentQueueFamily == nil { return 0 }
-	if c.SurfaceCaps == nil { return 0 }
-	if len(c.SurfaceFormats) == 0 { return 0 }
-	if len(c.SurfacePresentModes) == 0 {return 0}
+	if !c.Features.GeometryShader {
+		return 0
+	}
+	if c.GraphicsQueueFamily == nil || c.PresentQueueFamily == nil {
+		return 0
+	}
+	if c.SurfaceCaps == nil {
+		return 0
+	}
+	if len(c.SurfaceFormats) == 0 {
+		return 0
+	}
+	if len(c.SurfacePresentModes) == 0 {
+		return 0
+	}
 
 	score := int(c.Properties.Limits.MaxImageDimension2D)
-	if c.Properties.Type == core.DiscreteGPU {
+	if c.Properties.Type == core.DeviceDiscreteGPU {
 		score += 1000
 	}
 
@@ -63,7 +73,7 @@ func CreatePhysicalDeviceCaps(allocator cgoalloc.Allocator, device *VKng.Physica
 		return nil, err
 	}
 	for queueFamilyIdx, queueFamily := range queueFamilies {
-		if caps.GraphicsQueueFamily == nil && (queueFamily.Flags &core.Graphics) != 0 {
+		if caps.GraphicsQueueFamily == nil && (queueFamily.Flags&core.Graphics) != 0 {
 			gfxIdx := queueFamilyIdx
 			caps.GraphicsQueueFamily = &gfxIdx
 		}
