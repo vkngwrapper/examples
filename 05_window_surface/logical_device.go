@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/CannibalVox/VKng"
-	"github.com/CannibalVox/VKng/creation"
+	"github.com/CannibalVox/VKng/core"
 )
 
 func (app *HelloTriangleApplication) createLogicalDevice() error {
@@ -17,27 +17,27 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 		if presentationQueueFamily < 0 && app.surface.SupportsDevice(app.physicalDevice, i) {
 			presentationQueueFamily = i
 		}
-		if graphicsQueueFamily < 0 && queueFamilies[i].Flags & VKng.Graphics != 0 {
+		if graphicsQueueFamily < 0 && queueFamilies[i].Flags&core.Graphics != 0 {
 			graphicsQueueFamily = i
 		}
 	}
 
-	var queueFamilyOptions []*creation.QueueFamilyOptions
-	queueFamilyOptions = append(queueFamilyOptions, &creation.QueueFamilyOptions{
+	var queueFamilyOptions []*VKng.QueueFamilyOptions
+	queueFamilyOptions = append(queueFamilyOptions, &VKng.QueueFamilyOptions{
 		QueueFamilyIndex: graphicsQueueFamily,
-		QueuePriorities: []float32{1.0},
+		QueuePriorities:  []float32{1.0},
 	})
 
 	if graphicsQueueFamily != presentationQueueFamily {
-		queueFamilyOptions = append(queueFamilyOptions, &creation.QueueFamilyOptions{
+		queueFamilyOptions = append(queueFamilyOptions, &VKng.QueueFamilyOptions{
 			QueueFamilyIndex: presentationQueueFamily,
-			QueuePriorities: []float32{1.0},
+			QueuePriorities:  []float32{1.0},
 		})
 	}
 
-	logicalDevice, err := app.physicalDevice.CreateDevice(app.allocator, &creation.DeviceOptions{
-		QueueFamilies: queueFamilyOptions,
-		EnabledFeatures: &VKng.PhysicalDeviceFeatures{},
+	logicalDevice, err := app.physicalDevice.CreateDevice(app.allocator, &VKng.DeviceOptions{
+		QueueFamilies:   queueFamilyOptions,
+		EnabledFeatures: &core.PhysicalDeviceFeatures{},
 	})
 	if err != nil {
 		return err

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/ext_surface"
 	"github.com/CannibalVox/VKng/ext_swapchain"
@@ -23,6 +24,7 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 			bestFormat = format
 		}
 	}
+	app.swapchainFormat = bestFormat
 
 	// Find best present mode
 	var presentMode = ext_surface.FIFO
@@ -59,7 +61,7 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 		swapExtent.Height = height
 	}
 
-	swapDepth := caps.SurfaceCaps.MinImageCount+1
+	swapDepth := caps.SurfaceCaps.MinImageCount + 1
 	if caps.SurfaceCaps.MaxImageCount > 0 && caps.SurfaceCaps.MaxImageCount < swapDepth {
 		swapDepth = caps.SurfaceCaps.MaxImageCount
 	}
@@ -82,13 +84,13 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 		ImageArrayLayers: 1,
 		ImageUsage:       core.ColorAttachment,
 
-		SharingMode: sharingMode,
+		SharingMode:        sharingMode,
 		QueueFamilyIndices: queueFamilyIndices,
 
-		PreTransform: caps.SurfaceCaps.CurrentTransform,
+		PreTransform:   caps.SurfaceCaps.CurrentTransform,
 		CompositeAlpha: ext_surface.Opaque,
-		PresentMode: presentMode,
-		Clipped: true,
+		PresentMode:    presentMode,
+		Clipped:        true,
 	})
 	if err != nil {
 		return err
@@ -99,7 +101,35 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 		return err
 	}
 
+	var imageViews []*VKng.ImageView
+	for _, image := range images {
+		view, err := image.CreateImageView(app.allocator, &VKng.ImageViewOptions{
+			ViewType: core.View2D,
+			Format:   bestFormat.Format,
+			Components: core.ComponentMapping{
+				R: core.SwizzleIdentity,
+				G: core.SwizzleIdentity,
+				B: core.SwizzleIdentity,
+				A: core.SwizzleIdentity,
+			},
+			SubresourceRange: core.ImageSubresourceRange{
+				AspectMask:     core.AspectColor,
+				BaseMipLevel:   0,
+				LevelCount:     1,
+				BaseArrayLayer: 0,
+				LayerCount:     1,
+			},
+		})
+		if err != nil {
+			return err
+		}
+
+		imageViews = append(imageViews, view)
+	}
+
+	app.swapchainExtent = swapExtent
 	app.swapchain = swapchain
 	app.swapchainImages = images
+	app.swapchainImageViews = imageViews
 	return nil
 }

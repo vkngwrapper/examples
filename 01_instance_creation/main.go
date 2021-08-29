@@ -2,9 +2,8 @@ package main
 
 import (
 	"github.com/CannibalVox/VKng"
-	"github.com/CannibalVox/VKng/creation"
+	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/ext_debugutils"
-	"github.com/CannibalVox/VKng/objects"
 	"github.com/CannibalVox/cgoalloc"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
@@ -12,17 +11,21 @@ import (
 
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
-	window *sdl.Window
+	window    *sdl.Window
 
-	instance *objects.Instance
+	instance *VKng.Instance
 }
 
 func (app *HelloTriangleApplication) Run() error {
 	err := app.initWindow()
-	if err != nil {return err }
+	if err != nil {
+		return err
+	}
 
 	err = app.initVulkan()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer app.cleanup()
 
 	return app.mainLoop()
@@ -47,14 +50,14 @@ func (app *HelloTriangleApplication) createInstance() error {
 
 	extensions := append(sdlExtensions, ext_debugutils.ExtensionName)
 
-	i, err := objects.CreateInstance(app.allocator,
-		&creation.InstanceOptions{
+	i, err := VKng.CreateInstance(app.allocator,
+		&VKng.InstanceOptions{
 			ApplicationName:    "Hello Triangle",
-			ApplicationVersion: VKng.CreateVersion(1, 0, 0),
+			ApplicationVersion: core.CreateVersion(1, 0, 0),
 			EngineName:         "No Engine",
-			EngineVersion:      VKng.CreateVersion(1, 0, 0),
+			EngineVersion:      core.CreateVersion(1, 0, 0),
 			ExtensionNames:     extensions,
-			VulkanVersion: 		creation.Vulkan1_2,
+			VulkanVersion:      core.Vulkan1_2,
 		})
 	if err != nil {
 		return err

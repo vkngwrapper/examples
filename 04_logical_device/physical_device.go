@@ -2,12 +2,12 @@ package main
 
 import (
 	"github.com/CannibalVox/VKng"
-	"github.com/CannibalVox/VKng/objects"
+	"github.com/CannibalVox/VKng/core"
 	"github.com/palantir/stacktrace"
 	"log"
 )
 
-func (app *HelloTriangleApplication) rateDeviceSuitability(device *objects.PhysicalDevice) int {
+func (app *HelloTriangleApplication) rateDeviceSuitability(device *VKng.PhysicalDevice) int {
 	properties, err := device.Properties(app.allocator)
 	if err != nil {
 		log.Printf("could not get physical device properties: %v\n", err)
@@ -31,7 +31,7 @@ func (app *HelloTriangleApplication) rateDeviceSuitability(device *objects.Physi
 
 	foundGraphics := false
 	for _, queueFamily := range queueFamilies {
-		if queueFamily.Flags & VKng.Graphics != 0 {
+		if queueFamily.Flags &core.Graphics != 0 {
 			foundGraphics = true
 			break
 		}
@@ -42,7 +42,7 @@ func (app *HelloTriangleApplication) rateDeviceSuitability(device *objects.Physi
 	}
 
 	score := int(properties.Limits.MaxImageDimension2D)
-	if properties.Type == objects.DiscreteGPU {
+	if properties.Type == core.DiscreteGPU {
 		score += 1000
 	}
 
@@ -56,7 +56,7 @@ func (app *HelloTriangleApplication) pickPhysicalDevice() error {
 	}
 
 	bestScore := 0
-	var bestDevice *objects.PhysicalDevice
+	var bestDevice *VKng.PhysicalDevice
 
 	for _, device := range physicalDevices {
 		score := app.rateDeviceSuitability(device)

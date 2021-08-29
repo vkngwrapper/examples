@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/CannibalVox/VKng"
-	"github.com/CannibalVox/VKng/creation"
+	"github.com/CannibalVox/VKng/core"
 )
 
 func (app *HelloTriangleApplication) createLogicalDevice() error {
@@ -13,19 +13,19 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 
 	queueFamilyIndex := 0
 	for ; queueFamilyIndex < len(queueFamilies); queueFamilyIndex++ {
-		if queueFamilies[queueFamilyIndex].Flags & VKng.Graphics != 0 {
+		if queueFamilies[queueFamilyIndex].Flags&core.Graphics != 0 {
 			break
 		}
 	}
 
-	logicalDevice, err := app.physicalDevice.CreateDevice(app.allocator, &creation.DeviceOptions{
-		QueueFamilies: []*creation.QueueFamilyOptions{
+	logicalDevice, err := app.physicalDevice.CreateDevice(app.allocator, &VKng.DeviceOptions{
+		QueueFamilies: []*VKng.QueueFamilyOptions{
 			{
 				QueueFamilyIndex: queueFamilyIndex,
-				QueuePriorities: []float32{1.0},
+				QueuePriorities:  []float32{1.0},
 			},
 		},
-		EnabledFeatures: &VKng.PhysicalDeviceFeatures{},
+		EnabledFeatures: &core.PhysicalDeviceFeatures{},
 	})
 	if err != nil {
 		return err

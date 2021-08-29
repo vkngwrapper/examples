@@ -1,10 +1,22 @@
 package main
 
+/*
+#cgo windows LDFLAGS: -lvulkan
+#cgo linux freebsd darwin openbsd pkg-config: vulkan
+#include <stdlib.h>
+#include "vulkan/vulkan.h"
+#include <windows.h>
+#include "vulkan/vulkan_win32.h"
+*/
+import "C"
 import (
 	"errors"
 	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/ext_debugutils"
+	"github.com/CannibalVox/VKng/ext_surface"
+	"github.com/CannibalVox/VKng/ext_surface_sdl2"
+	"github.com/CannibalVox/VKng/ext_swapchain"
 	"github.com/CannibalVox/cgoalloc"
 	"github.com/palantir/stacktrace"
 	"github.com/veandco/go-sdl2/sdl"
@@ -15,11 +27,16 @@ type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
 	window    *sdl.Window
 
-	instance       *VKng.Instance
-	debugMessenger *ext_debugutils.Messenger
-	physicalDevice *VKng.PhysicalDevice
-	logicalDevice  *VKng.Device
-	queue          *VKng.Queue
+	instance            *VKng.Instance
+	debugMessenger      *ext_debugutils.Messenger
+	physicalDevice      *VKng.PhysicalDevice
+	logicalDevice       *VKng.Device
+	graphicsQueue       *VKng.Queue
+	presentQueue        *VKng.Queue
+	surface             *ext_surface.Surface
+	swapchain           *ext_swapchain.Swapchain
+	swapchainImages     []*VKng.Image
+	swapchainImageViews []*VKng.ImageView
 }
 
 func (app *HelloTriangleApplication) Run() error {
@@ -122,17 +139,42 @@ func (app *HelloTriangleApplication) initVulkan() error {
 		return err
 	}
 
-	err = app.pickPhysicalDevice()
+	surface, err := ext_surface_sdl2.CreateSurface(app.allocator, app.instance, &ext_surface_sdl2.CreationOptions{
+		Window: app.window,
+	})
+	if err != nil {
+		return err
+	}
+	app.surface = surface
+
+	caps, err := app.pickPhysicalDevice()
 	if err != nil {
 		return err
 	}
 
-	return app.createLogicalDevice()
+	err = app.createLogicalDevice(caps)
+	if err != nil {
+		return err
+	}
+
+	return app.createSwapchain(caps)
 }
 
 func (app *HelloTriangleApplication) cleanup() {
+	for _, imageView := range app.swapchainImageViews {
+		imageView.Destroy()
+	}
+
+	if app.swapchain != nil {
+		app.swapchain.Destroy()
+	}
+
 	if app.logicalDevice != nil {
 		app.logicalDevice.Destroy()
+	}
+
+	if app.surface != nil {
+		app.surface.Destroy()
 	}
 
 	if app.debugMessenger != nil {

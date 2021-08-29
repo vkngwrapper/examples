@@ -12,11 +12,10 @@ import "C"
 import (
 	"errors"
 	"github.com/CannibalVox/VKng"
-	"github.com/CannibalVox/VKng/creation"
+	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/ext_debugutils"
 	"github.com/CannibalVox/VKng/ext_surface"
 	"github.com/CannibalVox/VKng/ext_surface_sdl2"
-	"github.com/CannibalVox/VKng/objects"
 	"github.com/CannibalVox/cgoalloc"
 	"github.com/palantir/stacktrace"
 	"github.com/veandco/go-sdl2/sdl"
@@ -25,23 +24,27 @@ import (
 
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
-	window *sdl.Window
+	window    *sdl.Window
 
-	instance *objects.Instance
+	instance       *VKng.Instance
 	debugMessenger *ext_debugutils.Messenger
-	physicalDevice *objects.PhysicalDevice
-	logicalDevice *objects.Device
-	graphicsQueue *objects.Queue
-	presentQueue *objects.Queue
-	surface       *ext_surface.Surface
+	physicalDevice *VKng.PhysicalDevice
+	logicalDevice  *VKng.Device
+	graphicsQueue  *VKng.Queue
+	presentQueue   *VKng.Queue
+	surface        *ext_surface.Surface
 }
 
 func (app *HelloTriangleApplication) Run() error {
 	err := app.initWindow()
-	if err != nil {return err }
+	if err != nil {
+		return err
+	}
 
 	err = app.initVulkan()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer app.cleanup()
 
 	return app.mainLoop()
@@ -62,12 +65,12 @@ func (app *HelloTriangleApplication) initWindow() error {
 }
 
 func (app *HelloTriangleApplication) createInstance() error {
-	instanceOptions := &creation.InstanceOptions{
-		ApplicationName: "Hello Triangle",
-		ApplicationVersion: VKng.CreateVersion(1, 0, 0),
-		EngineName: "No Engine",
-		EngineVersion: VKng.CreateVersion(1, 0, 0),
-		VulkanVersion: 		creation.Vulkan1_2,
+	instanceOptions := &VKng.InstanceOptions{
+		ApplicationName:    "Hello Triangle",
+		ApplicationVersion: core.CreateVersion(1, 0, 0),
+		EngineName:         "No Engine",
+		EngineVersion:      core.CreateVersion(1, 0, 0),
+		VulkanVersion:      core.Vulkan1_2,
 	}
 
 	// Add extensions
@@ -107,13 +110,13 @@ func (app *HelloTriangleApplication) createInstance() error {
 
 	// Add debug messenger
 	debugMessengerOptions := &ext_debugutils.Options{
-		CaptureSeverities: ext_debugutils.SeverityError|ext_debugutils.SeverityWarning,
-		CaptureTypes: ext_debugutils.TypeAll,
-		Callback: app.logDebug,
+		CaptureSeverities: ext_debugutils.SeverityError | ext_debugutils.SeverityWarning,
+		CaptureTypes:      ext_debugutils.TypeAll,
+		Callback:          app.logDebug,
 	}
 	instanceOptions.Next = debugMessengerOptions
 
-	app.instance, err = objects.CreateInstance(app.allocator, instanceOptions)
+	app.instance, err = VKng.CreateInstance(app.allocator, instanceOptions)
 	if err != nil {
 		return err
 	}
