@@ -55,26 +55,26 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 	}
 	defer fragShader.Destroy()
 
-	_ = &pipeline.VertexInputOptions{}
+	vertexInput := &pipeline.VertexInputOptions{}
 
-	_ = &pipeline.InputAssemblyOptions{
+	inputAssembly := &pipeline.InputAssemblyOptions{
 		Topology:               core.TopologyTriangleList,
 		EnablePrimitiveRestart: false,
 	}
 
-	_ = &pipeline.ShaderStage{
+	vertStage := &pipeline.ShaderStage{
 		Stage:  core.StageVertex,
 		Shader: vertShader,
 		Name:   "main",
 	}
 
-	_ = &pipeline.ShaderStage{
+	fragStage := &pipeline.ShaderStage{
 		Stage:  core.StageFragment,
 		Shader: fragShader,
 		Name:   "main",
 	}
 
-	_ = &pipeline.ViewportOptions{
+	viewport := &pipeline.ViewportOptions{
 		Viewports: []core.Viewport{
 			{
 				X:        0,
@@ -93,7 +93,7 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 		},
 	}
 
-	_ = &pipeline.RasterizationOptions{
+	rasterization := &pipeline.RasterizationOptions{
 		DepthClamp:        false,
 		RasterizerDiscard: false,
 
@@ -106,13 +106,13 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 		LineWidth: 1.0,
 	}
 
-	_ = &pipeline.MultisampleOptions{
+	multisample := &pipeline.MultisampleOptions{
 		SampleShading:        false,
 		RasterizationSamples: core.Samples1,
 		MinSampleShading:     1.0,
 	}
 
-	_ = &pipeline.ColorBlendOptions{
+	colorBlend := &pipeline.ColorBlendOptions{
 		LogicOpEnabled: false,
 		LogicOp:        core.LogicOpCopy,
 
@@ -137,6 +137,29 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 	if err != nil {
 		return err
 	}
+
+	pipelines, err := pipeline.CreateGraphicsPipelines(app.allocator, app.logicalDevice, []*pipeline.Options{
+		{
+			ShaderStages: []*pipeline.ShaderStage{
+				vertStage,
+				fragStage,
+			},
+			VertexInput:       vertexInput,
+			InputAssembly:     inputAssembly,
+			Viewport:          viewport,
+			Rasterization:     rasterization,
+			Multisample:       multisample,
+			ColorBlend:        colorBlend,
+			Layout:            app.pipelineLayout,
+			RenderPass:        app.renderPass,
+			SubPass:           0,
+			BasePipelineIndex: -1,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	app.pipeline = pipelines[0]
 
 	return nil
 }

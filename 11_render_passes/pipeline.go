@@ -62,13 +62,13 @@ func (app *HelloTriangleApplication) createGraphicsPipeline() error {
 		EnablePrimitiveRestart: false,
 	}
 
-	_ = &pipeline.ShaderStageOptions{
+	_ = &pipeline.ShaderStage{
 		Stage:  core.StageVertex,
 		Shader: vertShader,
 		Name:   "main",
 	}
 
-	_ = &pipeline.ShaderStageOptions{
+	_ = &pipeline.ShaderStage{
 		Stage:  core.StageFragment,
 		Shader: fragShader,
 		Name:   "main",
