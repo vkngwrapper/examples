@@ -102,8 +102,9 @@ func (app *HelloTriangleApplication) createSwapchain(caps *PhysicalDeviceCaps) e
 
 	var imageViews []*VKng.ImageView
 	for _, image := range images {
-		view, err := image.CreateImageView(app.allocator, &VKng.ImageViewOptions{
+		view, err := app.logicalDevice.CreateImageView(app.allocator, &VKng.ImageViewOptions{
 			ViewType: core.View2D,
+			Image:    image,
 			Format:   bestFormat.Format,
 			Components: core.ComponentMapping{
 				R: core.SwizzleIdentity,
