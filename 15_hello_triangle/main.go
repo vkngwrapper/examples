@@ -45,6 +45,7 @@ type HelloTriangleApplication struct {
 	swapchainImages     []*VKng.Image
 	swapchainImageViews []*VKng.ImageView
 	framebuffers        []*render_pass.Framebuffer
+	imagesInFlight      []*VKng.Fence
 
 	pipelineLayout *pipeline.PipelineLayout
 	renderPass     *render_pass.RenderPass
@@ -53,8 +54,10 @@ type HelloTriangleApplication struct {
 	commandPool    *commands.CommandPool
 	commandBuffers []*commands.CommandBuffer
 
-	imageAvailableSemaphore *VKng.Semaphore
-	renderFinishedSemaphore *VKng.Semaphore
+	currentFrame            int
+	imageAvailableSemaphore []*VKng.Semaphore
+	renderFinishedSemaphore []*VKng.Semaphore
+	inFlightFence           []*VKng.Fence
 }
 
 func (app *HelloTriangleApplication) Run() error {
@@ -198,12 +201,16 @@ func (app *HelloTriangleApplication) initVulkan() error {
 }
 
 func (app *HelloTriangleApplication) cleanup() {
-	if app.renderFinishedSemaphore != nil {
-		app.renderFinishedSemaphore.Destroy()
+	for _, fence := range app.inFlightFence {
+		fence.Destroy()
 	}
 
-	if app.imageAvailableSemaphore != nil {
-		app.imageAvailableSemaphore.Destroy()
+	for _, semaphore := range app.renderFinishedSemaphore {
+		semaphore.Destroy()
+	}
+
+	for _, semaphore := range app.imageAvailableSemaphore {
+		semaphore.Destroy()
 	}
 
 	if app.commandPool != nil {
