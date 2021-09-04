@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/VKng/core"
-	"github.com/CannibalVox/VKng/ext_debugutils"
 	"github.com/CannibalVox/cgoalloc"
+	"github.com/palantir/stacktrace"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 )
@@ -45,30 +45,22 @@ func (app *HelloTriangleApplication) initWindow() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) createInstance() error {
-	sdlExtensions := app.window.VulkanGetInstanceExtensions()
-
-	extensions := append(sdlExtensions, ext_debugutils.ExtensionName)
-
-	i, err := VKng.CreateInstance(app.allocator,
-		&VKng.InstanceOptions{
-			ApplicationName:    "Hello Triangle",
-			ApplicationVersion: core.CreateVersion(1, 0, 0),
-			EngineName:         "No Engine",
-			EngineVersion:      core.CreateVersion(1, 0, 0),
-			ExtensionNames:     extensions,
-			VulkanVersion:      core.Vulkan1_2,
-		})
-	if err != nil {
-		return err
-	}
-
-	app.instance = i
-	return nil
-}
-
 func (app *HelloTriangleApplication) initVulkan() error {
 	return app.createInstance()
+}
+
+func (app *HelloTriangleApplication) mainLoop() error {
+appLoop:
+	for true {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				break appLoop
+			}
+		}
+	}
+
+	return nil
 }
 
 func (app *HelloTriangleApplication) cleanup() {
@@ -84,14 +76,33 @@ func (app *HelloTriangleApplication) cleanup() {
 	app.allocator.Destroy()
 }
 
-func (app *HelloTriangleApplication) mainLoop() error {
-	for true {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
-			case *sdl.QuitEvent:
-				return nil
-			}
+func (app *HelloTriangleApplication) createInstance() error {
+	instanceOptions := &VKng.InstanceOptions{
+		ApplicationName:    "Hello Triangle",
+		ApplicationVersion: core.CreateVersion(1, 0, 0),
+		EngineName:         "No Engine",
+		EngineVersion:      core.CreateVersion(1, 0, 0),
+		VulkanVersion:      core.Vulkan1_2,
+	}
+
+	// Add extensions
+	sdlExtensions := app.window.VulkanGetInstanceExtensions()
+	extensions, err := VKng.AvailableExtensions(app.allocator)
+	if err != nil {
+		return err
+	}
+
+	for _, ext := range sdlExtensions {
+		_, hasExt := extensions[ext]
+		if !hasExt {
+			return stacktrace.NewError("createinstance: cannot initialize sdl: missing extension %s", ext)
 		}
+		instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext)
+	}
+
+	app.instance, err = VKng.CreateInstance(app.allocator, instanceOptions)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/ext_debugutils"
@@ -10,6 +9,10 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 )
+
+var validationLayers = []string{"VK_LAYER_KHRONOS_validation"}
+
+const enableValidationLayers = true
 
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
@@ -48,6 +51,46 @@ func (app *HelloTriangleApplication) initWindow() error {
 	return nil
 }
 
+func (app *HelloTriangleApplication) initVulkan() error {
+	err := app.createInstance()
+	if err != nil {
+		return err
+	}
+
+	return app.setupDebugMessenger()
+}
+
+func (app *HelloTriangleApplication) mainLoop() error {
+appLoop:
+	for true {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				break appLoop
+			}
+		}
+	}
+
+	return nil
+}
+
+func (app *HelloTriangleApplication) cleanup() {
+	if app.debugMessenger != nil {
+		app.debugMessenger.Destroy()
+	}
+
+	if app.instance != nil {
+		app.instance.Destroy()
+	}
+
+	if app.window != nil {
+		app.window.Destroy()
+	}
+	sdl.Quit()
+
+	app.allocator.Destroy()
+}
+
 func (app *HelloTriangleApplication) createInstance() error {
 	instanceOptions := &VKng.InstanceOptions{
 		ApplicationName:    "Hello Triangle",
@@ -72,7 +115,9 @@ func (app *HelloTriangleApplication) createInstance() error {
 		instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext)
 	}
 
-	instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext_debugutils.ExtensionName)
+	if enableValidationLayers {
+		instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext_debugutils.ExtensionName)
+	}
 
 	// Add layers
 	layers, err := VKng.AvailableLayers(app.allocator)
@@ -80,31 +125,42 @@ func (app *HelloTriangleApplication) createInstance() error {
 		return err
 	}
 
-	_, hasOptimus := layers["VK_LAYER_NV_optimus"]
-	if !hasOptimus {
-		return errors.New("createInstance: cannot add nvidia optimus layer")
-	}
-	instanceOptions.LayerNames = append(instanceOptions.LayerNames, "VK_LAYER_NV_optimus")
+	if enableValidationLayers {
+		for _, layer := range validationLayers {
+			_, hasValidation := layers[layer]
+			if !hasValidation {
+				return stacktrace.NewError("createInstance: cannot add validation- layer %s not available- install LunarG Vulkan SDK", layer)
+			}
+			instanceOptions.LayerNames = append(instanceOptions.LayerNames, layer)
+		}
 
-	_, hasValidation := layers["VK_LAYER_KHRONOS_validation"]
-	if !hasValidation {
-		return errors.New("createInstance: cannot add khronos validation layer- install LunarG Vulkan SDK")
+		// Add debug messenger
+		instanceOptions.Next = app.debugMessengerOptions()
 	}
-	instanceOptions.LayerNames = append(instanceOptions.LayerNames, "VK_LAYER_KHRONOS_validation")
-
-	debugMessengerOptions := &ext_debugutils.Options{
-		CaptureSeverities: ext_debugutils.SeverityError | ext_debugutils.SeverityWarning,
-		CaptureTypes:      ext_debugutils.TypeAll,
-		Callback:          app.logDebug,
-	}
-	instanceOptions.Next = debugMessengerOptions
 
 	app.instance, err = VKng.CreateInstance(app.allocator, instanceOptions)
 	if err != nil {
 		return err
 	}
 
-	app.debugMessenger, err = ext_debugutils.CreateMessenger(app.allocator, app.instance, debugMessengerOptions)
+	return nil
+}
+
+func (app *HelloTriangleApplication) debugMessengerOptions() *ext_debugutils.Options {
+	return &ext_debugutils.Options{
+		CaptureSeverities: ext_debugutils.SeverityError | ext_debugutils.SeverityWarning,
+		CaptureTypes:      ext_debugutils.TypeAll,
+		Callback:          app.logDebug,
+	}
+}
+
+func (app *HelloTriangleApplication) setupDebugMessenger() error {
+	if !enableValidationLayers {
+		return nil
+	}
+
+	var err error
+	app.debugMessenger, err = ext_debugutils.CreateMessenger(app.allocator, app.instance, app.debugMessengerOptions())
 	if err != nil {
 		return err
 	}
@@ -112,43 +168,9 @@ func (app *HelloTriangleApplication) createInstance() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) initVulkan() error {
-	return app.createInstance()
-}
-
-func (app *HelloTriangleApplication) cleanup() {
-	if app.debugMessenger != nil {
-		app.debugMessenger.Destroy()
-	}
-
-	if app.instance != nil {
-		app.instance.Destroy()
-	}
-
-	if app.window != nil {
-		app.window.Destroy()
-	}
-	sdl.Quit()
-
-	app.allocator.Destroy()
-}
-
 func (app *HelloTriangleApplication) logDebug(msgType ext_debugutils.MessageType, severity ext_debugutils.MessageSeverity, data *ext_debugutils.CallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	return false
-}
-
-func (app *HelloTriangleApplication) mainLoop() error {
-	for true {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
-			case *sdl.QuitEvent:
-				return nil
-			}
-		}
-	}
-
-	return nil
 }
 
 func main() {

@@ -2,22 +2,25 @@ package main
 
 import (
 	"github.com/CannibalVox/cgoalloc"
-	"log"
-
 	"github.com/veandco/go-sdl2/sdl"
+	"log"
 )
 
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
-	window *sdl.Window
+	window    *sdl.Window
 }
 
 func (app *HelloTriangleApplication) Run() error {
 	err := app.initWindow()
-	if err != nil {return err }
+	if err != nil {
+		return err
+	}
 
 	err = app.initVulkan()
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer app.cleanup()
 
 	return app.mainLoop()
@@ -41,24 +44,27 @@ func (app *HelloTriangleApplication) initVulkan() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) cleanup() {
-	app.allocator.Destroy()
-
-	app.window.Destroy()
-	sdl.Quit()
-}
-
 func (app *HelloTriangleApplication) mainLoop() error {
+appLoop:
 	for true {
 		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 			switch event.(type) {
 			case *sdl.QuitEvent:
-				return nil
+				break appLoop
 			}
 		}
 	}
 
 	return nil
+}
+
+func (app *HelloTriangleApplication) cleanup() {
+	if app.window != nil {
+		app.window.Destroy()
+	}
+	sdl.Quit()
+
+	app.allocator.Destroy()
 }
 
 func main() {

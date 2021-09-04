@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"github.com/CannibalVox/VKng"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/ext_debugutils"
@@ -11,15 +10,29 @@ import (
 	"log"
 )
 
+var validationLayers = []string{"VK_LAYER_KHRONOS_validation"}
+
+const enableValidationLayers = true
+
+type QueueFamilyIndices struct {
+	GraphicsFamily *int
+}
+
+func (i *QueueFamilyIndices) IsComplete() bool {
+	return i.GraphicsFamily != nil
+}
+
 type HelloTriangleApplication struct {
 	allocator cgoalloc.Allocator
 	window    *sdl.Window
 
 	instance       *VKng.Instance
 	debugMessenger *ext_debugutils.Messenger
+
 	physicalDevice *VKng.PhysicalDevice
-	logicalDevice  *VKng.Device
-	queue          *VKng.Queue
+	device         *VKng.Device
+
+	graphicsQueue *VKng.Queue
 }
 
 func (app *HelloTriangleApplication) Run() error {
@@ -51,6 +64,60 @@ func (app *HelloTriangleApplication) initWindow() error {
 	return nil
 }
 
+func (app *HelloTriangleApplication) initVulkan() error {
+	err := app.createInstance()
+	if err != nil {
+		return err
+	}
+
+	err = app.setupDebugMessenger()
+	if err != nil {
+		return err
+	}
+
+	err = app.pickPhysicalDevice()
+	if err != nil {
+		return err
+	}
+
+	return app.createLogicalDevice()
+}
+
+func (app *HelloTriangleApplication) mainLoop() error {
+appLoop:
+	for true {
+		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+			switch event.(type) {
+			case *sdl.QuitEvent:
+				break appLoop
+			}
+		}
+	}
+
+	return nil
+}
+
+func (app *HelloTriangleApplication) cleanup() {
+	if app.device != nil {
+		app.device.Destroy()
+	}
+
+	if app.debugMessenger != nil {
+		app.debugMessenger.Destroy()
+	}
+
+	if app.instance != nil {
+		app.instance.Destroy()
+	}
+
+	if app.window != nil {
+		app.window.Destroy()
+	}
+	sdl.Quit()
+
+	app.allocator.Destroy()
+}
+
 func (app *HelloTriangleApplication) createInstance() error {
 	instanceOptions := &VKng.InstanceOptions{
 		ApplicationName:    "Hello Triangle",
@@ -75,7 +142,9 @@ func (app *HelloTriangleApplication) createInstance() error {
 		instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext)
 	}
 
-	instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext_debugutils.ExtensionName)
+	if enableValidationLayers {
+		instanceOptions.ExtensionNames = append(instanceOptions.ExtensionNames, ext_debugutils.ExtensionName)
+	}
 
 	// Add layers
 	layers, err := VKng.AvailableLayers(app.allocator)
@@ -83,32 +152,42 @@ func (app *HelloTriangleApplication) createInstance() error {
 		return err
 	}
 
-	_, hasOptimus := layers["VK_LAYER_NV_optimus"]
-	if !hasOptimus {
-		return errors.New("createInstance: cannot add nvidia optimus layer")
-	}
-	instanceOptions.LayerNames = append(instanceOptions.LayerNames, "VK_LAYER_NV_optimus")
+	if enableValidationLayers {
+		for _, layer := range validationLayers {
+			_, hasValidation := layers[layer]
+			if !hasValidation {
+				return stacktrace.NewError("createInstance: cannot add validation- layer %s not available- install LunarG Vulkan SDK", layer)
+			}
+			instanceOptions.LayerNames = append(instanceOptions.LayerNames, layer)
+		}
 
-	_, hasValidation := layers["VK_LAYER_KHRONOS_validation"]
-	if !hasValidation {
-		return errors.New("createInstance: cannot add khronos validation layer- install LunarG Vulkan SDK")
+		// Add debug messenger
+		instanceOptions.Next = app.debugMessengerOptions()
 	}
-	instanceOptions.LayerNames = append(instanceOptions.LayerNames, "VK_LAYER_KHRONOS_validation")
-
-	// Add debug messenger
-	debugMessengerOptions := &ext_debugutils.Options{
-		CaptureSeverities: ext_debugutils.SeverityError | ext_debugutils.SeverityWarning,
-		CaptureTypes:      ext_debugutils.TypeAll,
-		Callback:          app.logDebug,
-	}
-	instanceOptions.Next = debugMessengerOptions
 
 	app.instance, err = VKng.CreateInstance(app.allocator, instanceOptions)
 	if err != nil {
 		return err
 	}
 
-	app.debugMessenger, err = ext_debugutils.CreateMessenger(app.allocator, app.instance, debugMessengerOptions)
+	return nil
+}
+
+func (app *HelloTriangleApplication) debugMessengerOptions() *ext_debugutils.Options {
+	return &ext_debugutils.Options{
+		CaptureSeverities: ext_debugutils.SeverityError | ext_debugutils.SeverityWarning,
+		CaptureTypes:      ext_debugutils.TypeAll,
+		Callback:          app.logDebug,
+	}
+}
+
+func (app *HelloTriangleApplication) setupDebugMessenger() error {
+	if !enableValidationLayers {
+		return nil
+	}
+
+	var err error
+	app.debugMessenger, err = ext_debugutils.CreateMessenger(app.allocator, app.instance, app.debugMessengerOptions())
 	if err != nil {
 		return err
 	}
@@ -116,57 +195,96 @@ func (app *HelloTriangleApplication) createInstance() error {
 	return nil
 }
 
-func (app *HelloTriangleApplication) initVulkan() error {
-	err := app.createInstance()
+func (app *HelloTriangleApplication) pickPhysicalDevice() error {
+	physicalDevices, err := app.instance.PhysicalDevices(app.allocator)
 	if err != nil {
 		return err
 	}
 
-	err = app.pickPhysicalDevice()
-	if err != nil {
-		return err
+	for _, device := range physicalDevices {
+		if app.isDeviceSuitable(device) {
+			app.physicalDevice = device
+			break
+		}
 	}
 
-	return app.createLogicalDevice()
+	if app.physicalDevice == nil {
+		return stacktrace.NewError("failed to find a suitable GPU!")
+	}
+
+	return nil
 }
 
-func (app *HelloTriangleApplication) cleanup() {
-	if app.logicalDevice != nil {
-		app.logicalDevice.Destroy()
+func (app *HelloTriangleApplication) createLogicalDevice() error {
+	indices, err := app.findQueueFamilies(app.physicalDevice)
+	if err != nil {
+		return err
 	}
 
-	if app.debugMessenger != nil {
-		app.debugMessenger.Destroy()
+	uniqueQueueFamilies := []int{*indices.GraphicsFamily}
+
+	var queueFamilyOptions []*VKng.QueueFamilyOptions
+	queuePriority := float32(1.0)
+	for _, queueFamily := range uniqueQueueFamilies {
+		queueFamilyOptions = append(queueFamilyOptions, &VKng.QueueFamilyOptions{
+			QueueFamilyIndex: queueFamily,
+			QueuePriorities:  []float32{queuePriority},
+		})
 	}
 
-	if app.instance != nil {
-		app.instance.Destroy()
+	var extensionNames []string
+	var layerNames []string
+	if enableValidationLayers {
+		layerNames = append(layerNames, validationLayers...)
 	}
 
-	if app.window != nil {
-		app.window.Destroy()
+	app.device, err = app.physicalDevice.CreateDevice(app.allocator, &VKng.DeviceOptions{
+		QueueFamilies:   queueFamilyOptions,
+		EnabledFeatures: &core.PhysicalDeviceFeatures{},
+		ExtensionNames:  extensionNames,
+		LayerNames:      layerNames,
+	})
+	if err != nil {
+		return err
 	}
-	sdl.Quit()
 
-	app.allocator.Destroy()
+	app.graphicsQueue, err = app.device.GetQueue(*indices.GraphicsFamily, 0)
+	return err
+}
+
+func (app *HelloTriangleApplication) isDeviceSuitable(device *VKng.PhysicalDevice) bool {
+	indices, err := app.findQueueFamilies(device)
+	if err != nil {
+		return false
+	}
+
+	return indices.IsComplete()
+}
+
+func (app *HelloTriangleApplication) findQueueFamilies(device *VKng.PhysicalDevice) (QueueFamilyIndices, error) {
+	indices := QueueFamilyIndices{}
+	queueFamilies, err := device.QueueFamilyProperties(app.allocator)
+	if err != nil {
+		return indices, err
+	}
+
+	for queueFamilyIdx, queueFamily := range queueFamilies {
+		if (queueFamily.Flags & core.Graphics) != 0 {
+			indices.GraphicsFamily = new(int)
+			*indices.GraphicsFamily = queueFamilyIdx
+		}
+
+		if indices.IsComplete() {
+			break
+		}
+	}
+
+	return indices, nil
 }
 
 func (app *HelloTriangleApplication) logDebug(msgType ext_debugutils.MessageType, severity ext_debugutils.MessageSeverity, data *ext_debugutils.CallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	return false
-}
-
-func (app *HelloTriangleApplication) mainLoop() error {
-	for true {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			switch event.(type) {
-			case *sdl.QuitEvent:
-				return nil
-			}
-		}
-	}
-
-	return nil
 }
 
 func main() {
