@@ -11,6 +11,7 @@ import (
 	"github.com/cockroachdb/errors"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/veandco/go-sdl2/sdl"
+	"log"
 	"unsafe"
 )
 
@@ -498,8 +499,10 @@ func (i *SampleInfo) InitSwapchain() error {
 }
 
 func (i *SampleInfo) InitDepthBuffer() error {
-	depthFormat := common.FormatD16UnsignedNormalized
-	i.Depth.Format = depthFormat
+	if i.Depth.Format == common.FormatUndefined {
+		i.Depth.Format = common.FormatD16UnsignedNormalized
+	}
+	depthFormat := i.Depth.Format
 
 	props := i.Gpus[0].FormatProperties(depthFormat)
 
@@ -655,6 +658,38 @@ func (i *SampleInfo) InitUniformBuffer() error {
 	return nil
 }
 
+func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
+	layoutBindings := []*core.DescriptorLayoutBinding{
+		{
+			Binding:      0,
+			Type:         common.DescriptorUniformBuffer,
+			Count:        1,
+			ShaderStages: common.StageVertex,
+		},
+	}
+	if useTexture {
+		layoutBindings = append(layoutBindings, &core.DescriptorLayoutBinding{
+			Binding:      1,
+			Type:         common.DescriptorCombinedImageSampler,
+			Count:        1,
+			ShaderStages: common.StageFragment,
+		})
+	}
+
+	layout, _, err := i.Loader.CreateDescriptorSetLayout(i.Device, &core.DescriptorSetLayoutOptions{
+		Bindings: layoutBindings,
+	})
+	if err != nil {
+		return err
+	}
+
+	i.DescLayout = []core.DescriptorSetLayout{layout}
+	i.PipelineLayout, _, err = i.Loader.CreatePipelineLayout(i.Device, &core.PipelineLayoutOptions{
+		SetLayouts: []core.DescriptorSetLayout{layout},
+	})
+	return err
+}
+
 func (i *SampleInfo) InitRenderPass(depthPresent bool) error {
 	attachments := []core.AttachmentDescription{
 		{
@@ -701,8 +736,8 @@ func (i *SampleInfo) InitRenderPass(depthPresent bool) error {
 				DstSubPassIndex: 0,
 				SrcStageMask:    common.PipelineStageColorAttachmentOutput,
 				DstStageMask:    common.PipelineStageColorAttachmentOutput,
-				SrcAccess:       0,
-				DstAccess:       common.AccessColorAttachmentWrite,
+				SrcAccessMask:   0,
+				DstAccessMask:   common.AccessColorAttachmentWrite,
 			},
 		},
 	}
@@ -871,6 +906,64 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 	return nil
 }
 
+func (i *SampleInfo) InitDescriptorPool(useTexture bool) error {
+	poolSizes := []core.PoolSize{
+		{
+			Type:  common.DescriptorUniformBuffer,
+			Count: 1,
+		},
+	}
+
+	if useTexture {
+		poolSizes = append(poolSizes, core.PoolSize{
+			Type:  common.DescriptorCombinedImageSampler,
+			Count: 1,
+		})
+	}
+
+	var err error
+	i.DescPool, _, err = i.Loader.CreateDescriptorPool(i.Device, &core.DescriptorPoolOptions{
+		MaxSets:   1,
+		PoolSizes: poolSizes,
+	})
+
+	return err
+}
+
+func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
+	var err error
+	i.DescSet, _, err = i.DescPool.AllocateDescriptorSets(&core.DescriptorSetOptions{
+		AllocationLayouts: i.DescLayout,
+	})
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	writes := []core.WriteDescriptorSetOptions{
+		{
+			Destination:             i.DescSet[0],
+			DestinationBinding:      0,
+			DestinationArrayElement: 0,
+
+			DescriptorType: common.DescriptorUniformBuffer,
+			BufferInfo:     []core.DescriptorBufferInfo{i.UniformData.BufferInfo},
+		},
+	}
+
+	if useTexture {
+		writes = append(writes, core.WriteDescriptorSetOptions{
+			Destination:             i.DescSet[0],
+			DestinationBinding:      1,
+			DestinationArrayElement: 0,
+
+			DescriptorType: common.DescriptorCombinedImageSampler,
+			ImageInfo:      []core.DescriptorImageInfo{i.TextureData.ImageInfo},
+		})
+	}
+
+	return i.Device.UpdateDescriptorSets(writes, nil)
+}
+
 func (i *SampleInfo) InitPipelineCache() error {
 	var err error
 	i.PipelineCache, _, err = i.Loader.CreatePipelineCache(i.Device, &core.PipelineCacheOptions{})
@@ -897,7 +990,7 @@ func (i *SampleInfo) InitPipeline(depthPresent bool) error {
 			},
 		},
 		Rasterization: &core.RasterizationOptions{
-			PolygonMode:             core.ModeFill,
+			PolygonMode:             core.PolygonModeFill,
 			CullMode:                common.CullBack,
 			FrontFace:               common.FrontFaceClockwise,
 			DepthClamp:              false,
@@ -960,14 +1053,14 @@ func (i *SampleInfo) InitPipeline(depthPresent bool) error {
 			},
 		},
 		DynamicState: &core.DynamicStateOptions{
-			DynamicStates: []core.DynamicState{core.StateViewport, core.StateScissor},
+			DynamicStates: []core.DynamicState{core.DynamicStateViewport, core.DynamicStateScissor},
 		},
 		Layout:     i.PipelineLayout,
 		RenderPass: i.RenderPass,
 		SubPass:    0,
 	}
 
-	pipelines, _, err := i.Loader.CreateGraphicsPipelines(i.Device,
+	pipelines, _, err := i.Loader.CreateGraphicsPipelines(i.Device, i.PipelineCache,
 		[]*core.GraphicsPipelineOptions{
 			pipelineOptions,
 		})
@@ -1009,7 +1102,7 @@ func (i *SampleInfo) InitRenderPassBeginInfo() *core.RenderPassBeginOptions {
 	}
 }
 
-func (i *SampleInfo) InitViewports() error {
+func (i *SampleInfo) InitViewports() {
 	i.Viewport = common.Viewport{
 		X:        0,
 		Y:        0,
@@ -1018,15 +1111,15 @@ func (i *SampleInfo) InitViewports() error {
 		MinDepth: 0,
 		MaxDepth: 1,
 	}
-	return i.Cmd.CmdSetViewport(0, []common.Viewport{i.Viewport})
+	i.Cmd.CmdSetViewport(0, []common.Viewport{i.Viewport})
 }
 
-func (i *SampleInfo) InitScissors() error {
+func (i *SampleInfo) InitScissors() {
 	i.Scissor = common.Rect2D{
 		Offset: common.Offset2D{0, 0},
 		Extent: common.Extent2D{i.Width, i.Height},
 	}
-	return i.Cmd.CmdSetScissor(0, []common.Rect2D{i.Scissor})
+	i.Cmd.CmdSetScissor(0, []common.Rect2D{i.Scissor})
 }
 
 func (i *SampleInfo) InitFence() (core.Fence, error) {
@@ -1116,4 +1209,15 @@ func (i *SampleInfo) DestroyDevice() error {
 
 func (i *SampleInfo) DestroyInstance() {
 	i.Instance.Destroy()
+}
+
+func (i *SampleInfo) DestroyDescriptorPool() {
+	i.DescPool.Destroy()
+}
+
+func (i *SampleInfo) DestroyDescriptorAndPipelineLayouts() {
+	for ind := 0; ind < NumDescriptorSets; ind++ {
+		i.DescLayout[ind].Destroy()
+	}
+	i.PipelineLayout.Destroy()
 }

@@ -23,7 +23,7 @@ func logDebug(msgType ext_debug_utils.MessageType, severity ext_debug_utils.Mess
 
 func main() {
 	info := &utils.SampleInfo{}
-	err := utils.ProcessCommandLineArgs(info)
+	err := info.ProcessCommandLineArgs()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -274,41 +274,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, descriptorSets, nil)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = info.Cmd.CmdBindVertexBuffers(0, []core.Buffer{info.VertexBuffer.Buf}, []int{0})
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = info.InitViewports()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = info.InitScissors()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = info.Cmd.CmdDraw(36, 1, 0, 0)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = info.Cmd.CmdEndRenderPass()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
+	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, descriptorSets, nil)
+	info.Cmd.CmdBindVertexBuffers(0, []core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.InitViewports()
+	info.InitScissors()
+	info.Cmd.CmdDraw(36, 1, 0, 0)
+	info.Cmd.CmdEndRenderPass()
 	_, err = info.Cmd.End()
 	if err != nil {
 		log.Fatalln(err)

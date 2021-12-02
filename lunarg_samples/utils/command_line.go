@@ -5,12 +5,12 @@ import (
 	"os"
 )
 
-func ProcessCommandLineArgs(info *SampleInfo) error {
+func (i *SampleInfo) ProcessCommandLineArgs() error {
 	args := os.Args[1:]
 
 	for _, arg := range args {
 		if arg == "--save-images" {
-			info.SaveImages = true
+			i.SaveImages = true
 		} else if arg == "--help" || arg == "-h" {
 			fmt.Println("\nOther options")
 			fmt.Println("\t--save-images")
