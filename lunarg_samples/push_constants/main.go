@@ -28,7 +28,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitWindowSize(1000, 1000)
+	err = info.InitWindowSize(500, 500)
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -536,7 +536,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	}
 
 	imageMemoryReqs := i.Depth.Image.MemoryRequirements()
-	typeIndex, err := i.memoryTypeFromProperties(imageMemoryReqs.MemoryType, core.MemoryDeviceLocal)
+	typeIndex, err := i.MemoryTypeFromProperties(imageMemoryReqs.MemoryType, core.MemoryDeviceLocal)
 	if err != nil {
 		return err
 	}
@@ -575,7 +575,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	return err
 }
 
-func (i *SampleInfo) memoryTypeFromProperties(memoryType uint32, flags core.MemoryPropertyFlags) (int, error) {
+func (i *SampleInfo) MemoryTypeFromProperties(memoryType uint32, flags core.MemoryPropertyFlags) (int, error) {
 	for typeIndex, memType := range i.MemoryProperties.MemoryTypes {
 		if (memoryType & 1) != 0 {
 			// Type is available, does it match user properties?
@@ -613,7 +613,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 	}
 
 	memReqs := i.UniformData.Buf.MemoryRequirements()
-	memoryTypeIndex, err := i.memoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
 	if err != nil {
 		return err
 	}
@@ -839,7 +839,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 	}
 
 	memReqs := i.VertexBuffer.Buf.MemoryRequirements()
-	memoryIndex, err := i.memoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
 	if err != nil {
 		return err
 	}

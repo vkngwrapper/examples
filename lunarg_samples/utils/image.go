@@ -75,7 +75,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	}
 
 	memReqs := mappableImage.MemoryRequirements()
-	memoryTypeIndex, err := i.memoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
 	if err != nil {
 		return err
 	}
