@@ -72,7 +72,7 @@ func main() {
 		Callback:          logDebug,
 	}
 
-	err = info.InitInstance("Simple Push Constants", debugOptions)
+	err = info.InitInstance("Draw Cube", debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}

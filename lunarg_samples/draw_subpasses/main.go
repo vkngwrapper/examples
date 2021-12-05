@@ -70,7 +70,7 @@ func main() {
 		Callback:          logDebug,
 	}
 
-	err = info.InitInstance("Simple Push Constants", debugOptions)
+	err = info.InitInstance("Multi-pass render passes", debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}

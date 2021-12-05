@@ -350,6 +350,11 @@ func (i *SampleInfo) ExecuteBeginCommandBuffer() error {
 	return err
 }
 
+func (i *SampleInfo) ExecuteEndCommandBuffer() error {
+	_, err := i.Cmd.End()
+	return err
+}
+
 func (i *SampleInfo) InitDeviceQueue() error {
 	i.GraphicsQueue = i.Device.GetQueue(i.GraphicsQueueFamilyIndex, 0)
 
