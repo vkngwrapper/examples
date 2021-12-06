@@ -367,9 +367,7 @@ func (i *SampleInfo) InitDeviceQueue() error {
 	return nil
 }
 
-func (i *SampleInfo) InitSwapchain() error {
-	usage := common.ImageColorAttachment | common.ImageTransferSrc
-
+func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 	surfaceCaps, _, err := i.Surface.Capabilities(i.Gpus[0])
 	if err != nil {
 		return err

@@ -13,13 +13,13 @@ import (
 	"unsafe"
 )
 
-func (i *SampleInfo) setImageLayout(image core.Image, aspectMask common.ImageAspectFlags, oldImageLayout common.ImageLayout, newImageLayout common.ImageLayout, sourceStages common.PipelineStages, destStages common.PipelineStages) error {
+func (i *SampleInfo) SetImageLayout(image core.Image, aspectMask common.ImageAspectFlags, oldImageLayout common.ImageLayout, newImageLayout common.ImageLayout, sourceStages common.PipelineStages, destStages common.PipelineStages) error {
 	imageBarrierOptions := &core.ImageMemoryBarrierOptions{
-		OldLayout:            oldImageLayout,
-		NewLayout:            newImageLayout,
-		SrcQueueFamilyIndex:  -1,
-		DestQueueFamilyIndex: -1,
-		Image:                image,
+		OldLayout:           oldImageLayout,
+		NewLayout:           newImageLayout,
+		SrcQueueFamilyIndex: -1,
+		DstQueueFamilyIndex: -1,
+		Image:               image,
 		SubresourceRange: common.ImageSubresourceRange{
 			AspectMask:     aspectMask,
 			BaseMipLevel:   0,
@@ -40,15 +40,15 @@ func (i *SampleInfo) setImageLayout(image core.Image, aspectMask common.ImageAsp
 
 	switch newImageLayout {
 	case common.LayoutTransferDstOptimal:
-		imageBarrierOptions.DestAccessMask = common.AccessTransferWrite
+		imageBarrierOptions.DstAccessMask = common.AccessTransferWrite
 	case common.LayoutTransferSrcOptimal:
-		imageBarrierOptions.DestAccessMask = common.AccessTransferRead
+		imageBarrierOptions.DstAccessMask = common.AccessTransferRead
 	case common.LayoutShaderReadOnlyOptimal:
-		imageBarrierOptions.DestAccessMask = common.AccessShaderRead
+		imageBarrierOptions.DstAccessMask = common.AccessShaderRead
 	case common.LayoutColorAttachmentOptimal:
-		imageBarrierOptions.DestAccessMask = common.AccessColorAttachmentWrite
+		imageBarrierOptions.DstAccessMask = common.AccessColorAttachmentWrite
 	case common.LayoutDepthStencilAttachmentOptimal:
-		imageBarrierOptions.DestAccessMask = common.AccessDepthStencilAttachmentWrite
+		imageBarrierOptions.DstAccessMask = common.AccessDepthStencilAttachmentWrite
 	}
 
 	return i.Cmd.CmdPipelineBarrier(sourceStages, destStages, 0, nil, nil, []*core.ImageMemoryBarrierOptions{imageBarrierOptions})
@@ -99,12 +99,12 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	err = i.setImageLayout(mappableImage, common.AspectColor, common.LayoutUndefined, common.LayoutTransferDstOptimal, common.PipelineStageTopOfPipe, common.PipelineStageTransfer)
+	err = i.SetImageLayout(mappableImage, common.AspectColor, common.LayoutUndefined, common.LayoutTransferDstOptimal, common.PipelineStageTopOfPipe, common.PipelineStageTransfer)
 	if err != nil {
 		return err
 	}
 
-	err = i.setImageLayout(i.Buffers[i.CurrentBuffer].Image, common.AspectColor, common.LayoutPresentSrcKHR, common.LayoutTransferSrcOptimal, common.PipelineStageBottomOfPipe, common.PipelineStageTransfer)
+	err = i.SetImageLayout(i.Buffers[i.CurrentBuffer].Image, common.AspectColor, common.LayoutPresentSrcKHR, common.LayoutTransferSrcOptimal, common.PipelineStageBottomOfPipe, common.PipelineStageTransfer)
 	if err != nil {
 		return err
 	}
@@ -136,7 +136,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	err = i.setImageLayout(mappableImage, common.AspectColor, common.LayoutTransferDstOptimal, common.LayoutGeneral, common.PipelineStageTransfer, common.PipelineStageHost)
+	err = i.SetImageLayout(mappableImage, common.AspectColor, common.LayoutTransferDstOptimal, common.LayoutGeneral, common.PipelineStageTransfer, common.PipelineStageHost)
 	if err != nil {
 		return err
 	}
@@ -440,14 +440,14 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 	if !textureObj.NeedsStaging {
 		/* If we can use the linear tiled image as a texture, just do it */
 		textureObj.ImageLayout = common.LayoutShaderReadOnlyOptimal
-		err = i.setImageLayout(textureObj.Image, common.AspectColor, common.LayoutPreInitialized, textureObj.ImageLayout, common.PipelineStageHost, common.PipelineStageFragmentShader)
+		err = i.SetImageLayout(textureObj.Image, common.AspectColor, common.LayoutPreInitialized, textureObj.ImageLayout, common.PipelineStageHost, common.PipelineStageFragmentShader)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		/* Since we're going to blit to the texture image, set its layout to
 		 * DESTINATION_OPTIMAL */
-		err = i.setImageLayout(textureObj.Image, common.AspectColor, common.LayoutUndefined, common.LayoutTransferDstOptimal, common.PipelineStageTopOfPipe, common.PipelineStageTransfer)
+		err = i.SetImageLayout(textureObj.Image, common.AspectColor, common.LayoutUndefined, common.LayoutTransferDstOptimal, common.PipelineStageTopOfPipe, common.PipelineStageTransfer)
 		if err != nil {
 			return nil, err
 		}
@@ -475,7 +475,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 		/* Set the layout for the texture image from DESTINATION_OPTIMAL to
 		 * SHADER_READ_ONLY */
 		textureObj.ImageLayout = common.LayoutShaderReadOnlyOptimal
-		err = i.setImageLayout(textureObj.Image, common.AspectColor, common.LayoutTransferDstOptimal, textureObj.ImageLayout, common.PipelineStageTransfer, common.PipelineStageFragmentShader)
+		err = i.SetImageLayout(textureObj.Image, common.AspectColor, common.LayoutTransferDstOptimal, textureObj.ImageLayout, common.PipelineStageTransfer, common.PipelineStageFragmentShader)
 		if err != nil {
 			return nil, err
 		}

@@ -115,7 +115,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain()
+	err = info.InitSwapchain(common.ImageColorAttachment | common.ImageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -185,8 +185,6 @@ func main() {
 
 	// Set up one descriptor sets
 	const descriptorSetCount = 1
-	const resourceCount = 2
-	const resourceTypeCount = 2
 
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
@@ -388,5 +386,8 @@ func main() {
 	info.Surface.Destroy()
 	debugMessenger.Destroy()
 	info.DestroyInstance()
-	info.Window.Destroy()
+	err = info.Window.Destroy()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }
