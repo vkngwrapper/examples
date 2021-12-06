@@ -8,6 +8,7 @@ import (
 	"image"
 	"image/color"
 	"image/png"
+	"io"
 	"os"
 	"unsafe"
 )
@@ -230,4 +231,274 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	}
 
 	return png.Encode(writeFile, outImg)
+}
+
+func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
+	var err error
+	textureObj.Buffer, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
+		BufferSize:  textureObj.TexWidth * textureObj.TexHeight * 4,
+		Usages:      common.UsageTransferSrc,
+		SharingMode: common.SharingExclusive,
+	})
+	if err != nil {
+		return err
+	}
+
+	memReqs := textureObj.Buffer.MemoryRequirements()
+	textureObj.BufferSize = memReqs.Size
+
+	requirements := core.MemoryHostVisible | core.MemoryHostCoherent
+	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, requirements)
+	if err != nil {
+		return err
+	}
+
+	/* allocate memory */
+	textureObj.BufferMemory, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+		AllocationSize:  memReqs.Size,
+		MemoryTypeIndex: memoryIndex,
+	})
+	if err != nil {
+		return err
+	}
+
+	_, err = textureObj.Buffer.BindBufferMemory(textureObj.BufferMemory, 0)
+	return err
+}
+
+func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) {
+	image, _, err := image.Decode(textureReader)
+	if err != nil {
+		return nil, err
+	}
+
+	textureObj := &TextureObject{}
+	textureObj.TexWidth = image.Bounds().Size().X
+	textureObj.TexHeight = image.Bounds().Size().Y
+
+	formatProps := i.Gpus[0].FormatProperties(common.FormatR8G8B8A8UnsignedNormalized)
+
+	/* See if we can use a linear tiled image for a texture, if not, we will
+	 * need a staging buffer for the texture data */
+	allFeatures := common.FormatFeatureSampledImage
+	var usages common.ImageUsages
+	textureObj.NeedsStaging = (formatProps.LinearTilingFeatures & allFeatures) != allFeatures
+
+	if textureObj.NeedsStaging {
+		if (formatProps.OptimalTilingFeatures & allFeatures) != allFeatures {
+			return nil, errors.Newf("Format %s cannot support featureset %s\n", common.FormatR8G8B8A8UnsignedNormalized, allFeatures)
+		}
+		err = i.InitTextureBuffer(textureObj)
+		if err != nil {
+			return nil, err
+		}
+		usages |= common.ImageTransferDest
+	}
+
+	imageOptions := &core.ImageOptions{
+		Type:        common.ImageType2D,
+		Format:      common.FormatR8G8B8A8UnsignedNormalized,
+		Extent:      common.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},
+		MipLevels:   1,
+		ArrayLayers: 1,
+		Samples:     NumSamples,
+		Usage:       common.ImageSampled | usages,
+		SharingMode: common.SharingExclusive,
+	}
+	if textureObj.NeedsStaging {
+		imageOptions.Tiling = common.ImageTilingOptimal
+		imageOptions.InitialLayout = common.LayoutUndefined
+	} else {
+		imageOptions.Tiling = common.ImageTilingLinear
+		imageOptions.InitialLayout = common.LayoutPreInitialized
+	}
+
+	textureObj.Image, _, err = i.Loader.CreateImage(i.Device, imageOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	memReqs := textureObj.Image.MemoryRequirements()
+
+	var requirements core.MemoryPropertyFlags
+	if !textureObj.NeedsStaging {
+		requirements = core.MemoryHostVisible | core.MemoryHostCoherent
+	}
+
+	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, requirements)
+	if err != nil {
+		return nil, err
+	}
+
+	/* allocate memory */
+	textureObj.ImageMemory, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+		AllocationSize:  memReqs.Size,
+		MemoryTypeIndex: memoryIndex,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	/* bind memory */
+	_, err = textureObj.Image.BindImageMemory(textureObj.ImageMemory, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = i.Cmd.End()
+	if err != nil {
+		return nil, err
+	}
+
+	cmdFence, _, err := i.Loader.CreateFence(i.Device, &core.FenceOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	/* Queue the command buffer for execution */
+	_, err = i.GraphicsQueue.SubmitToQueue(cmdFence, []*core.SubmitOptions{
+		{
+			CommandBuffers: []core.CommandBuffer{i.Cmd},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	subResource := &common.ImageSubresource{
+		AspectMask: common.AspectColor,
+		MipLevel:   0,
+		ArrayLayer: 0,
+	}
+	layout := &common.SubresourceLayout{}
+	if !textureObj.NeedsStaging {
+		/* Get the subresource layout so we know what the row pitch is */
+		layout = textureObj.Image.SubresourceLayout(subResource)
+	}
+
+	/* Make sure command buffer is finished before mapping */
+	for {
+		res, err := cmdFence.Wait(FenceTimeout)
+		if err != nil {
+			return nil, err
+		}
+
+		if res != core.VKTimeout {
+			break
+		}
+	}
+
+	cmdFence.Destroy()
+
+	var dataPtr unsafe.Pointer
+	var data []byte
+	if textureObj.NeedsStaging {
+		dataPtr, _, err = textureObj.BufferMemory.MapMemory(0, textureObj.BufferSize, 0)
+		data = ([]byte)(unsafe.Slice((*byte)(dataPtr), textureObj.BufferSize))
+	} else {
+		dataPtr, _, err = textureObj.ImageMemory.MapMemory(0, memReqs.Size, 0)
+		data = ([]byte)(unsafe.Slice((*byte)(dataPtr), memReqs.Size))
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	/* Read the image file into the mappable image's memory */
+	var dataIndex = 0
+	for y := image.Bounds().Min.Y; y < image.Bounds().Max.Y; y++ {
+		rowIndex := dataIndex
+		for x := image.Bounds().Min.X; x < image.Bounds().Max.Y; x++ {
+			r, g, b, a := image.At(x, y).RGBA()
+			data[rowIndex] = byte(r)
+			data[rowIndex+1] = byte(g)
+			data[rowIndex+2] = byte(b)
+			data[rowIndex+3] = byte(a)
+			rowIndex += 4
+		}
+		if textureObj.NeedsStaging {
+			dataIndex += textureObj.TexWidth * 4
+		} else {
+			dataIndex += layout.RowPitch
+		}
+	}
+
+	if textureObj.NeedsStaging {
+		textureObj.BufferMemory.UnmapMemory()
+	} else {
+		textureObj.ImageMemory.UnmapMemory()
+	}
+
+	_, err = i.Cmd.Reset(0)
+	if err != nil {
+		return nil, err
+	}
+	_, err = i.Cmd.Begin(&core.BeginOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	if !textureObj.NeedsStaging {
+		/* If we can use the linear tiled image as a texture, just do it */
+		textureObj.ImageLayout = common.LayoutShaderReadOnlyOptimal
+		err = i.setImageLayout(textureObj.Image, common.AspectColor, common.LayoutPreInitialized, textureObj.ImageLayout, common.PipelineStageHost, common.PipelineStageFragmentShader)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		/* Since we're going to blit to the texture image, set its layout to
+		 * DESTINATION_OPTIMAL */
+		err = i.setImageLayout(textureObj.Image, common.AspectColor, common.LayoutUndefined, common.LayoutTransferDstOptimal, common.PipelineStageTopOfPipe, common.PipelineStageTransfer)
+		if err != nil {
+			return nil, err
+		}
+
+		/* Put the copy command into the command buffer */
+		err = i.Cmd.CmdCopyBufferToImage(textureObj.Buffer, textureObj.Image, common.LayoutTransferDstOptimal, []*core.BufferImageCopy{
+			{
+				BufferOffset:      0,
+				BufferRowLength:   textureObj.TexWidth,
+				BufferImageHeight: textureObj.TexHeight,
+				ImageSubresource: common.ImageSubresourceLayers{
+					AspectMask:     common.AspectColor,
+					MipLevel:       0,
+					BaseArrayLayer: 0,
+					LayerCount:     1,
+				},
+				ImageOffset: common.Offset3D{0, 0, 0},
+				ImageExtent: common.Extent3D{textureObj.TexWidth, textureObj.TexHeight, 1},
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		/* Set the layout for the texture image from DESTINATION_OPTIMAL to
+		 * SHADER_READ_ONLY */
+		textureObj.ImageLayout = common.LayoutShaderReadOnlyOptimal
+		err = i.setImageLayout(textureObj.Image, common.AspectColor, common.LayoutTransferDstOptimal, textureObj.ImageLayout, common.PipelineStageTransfer, common.PipelineStageFragmentShader)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	/* create image view */
+	textureObj.View, _, err = i.Loader.CreateImageView(i.Device, &core.ImageViewOptions{
+		Image:    textureObj.Image,
+		ViewType: common.View2D,
+		Format:   common.FormatR8G8B8A8UnsignedNormalized,
+		Components: common.ComponentMapping{
+			R: common.SwizzleRed,
+			G: common.SwizzleGreen,
+			B: common.SwizzleBlue,
+			A: common.SwizzleAlpha,
+		},
+		SubresourceRange: common.ImageSubresourceRange{
+			AspectMask:     common.AspectColor,
+			BaseMipLevel:   0,
+			LevelCount:     1,
+			BaseArrayLayer: 0,
+			LayerCount:     1,
+		},
+	})
+	return textureObj, err
 }

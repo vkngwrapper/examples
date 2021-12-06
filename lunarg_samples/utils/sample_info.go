@@ -1146,6 +1146,26 @@ func (i *SampleInfo) InitPresentInfo() *khr_swapchain.PresentOptions {
 		ImageIndices: []int{i.CurrentBuffer},
 	}
 }
+func (i *SampleInfo) InitSampler() (core.Sampler, error) {
+	sampler, _, err := i.Loader.CreateSampler(i.Device, &core.SamplerOptions{
+		MagFilter:        common.FilterNearest,
+		MinFilter:        common.FilterNearest,
+		MipmapMode:       common.MipmapNearest,
+		AddressModeU:     common.AddressModeClampToEdge,
+		AddressModeV:     common.AddressModeClampToEdge,
+		AddressModeW:     common.AddressModeClampToEdge,
+		MipLodBias:       0,
+		AnisotropyEnable: false,
+		MaxAnisotropy:    1,
+		CompareOp:        common.CompareNever,
+		MinLod:           0,
+		MaxLod:           0,
+		CompareEnable:    false,
+		BorderColor:      common.BorderColorFloatOpaqueWhite,
+	})
+
+	return sampler, err
+}
 
 func (i *SampleInfo) DestroyPipeline() {
 	i.Pipeline.Destroy()

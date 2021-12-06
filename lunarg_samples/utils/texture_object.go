@@ -13,7 +13,7 @@ type TextureObject struct {
 
 	NeedsStaging bool
 	Buffer       core.Buffer
-	BufferSize   uint64
+	BufferSize   int
 
 	ImageMemory         core.DeviceMemory
 	BufferMemory        core.DeviceMemory
