@@ -116,7 +116,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageColorAttachment | common.ImageTransferSrc)
+	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}

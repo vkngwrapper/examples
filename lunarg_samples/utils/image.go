@@ -56,8 +56,8 @@ func (i *SampleInfo) SetImageLayout(image core.Image, aspectMask common.ImageAsp
 
 func (i *SampleInfo) WritePNG(baseName string) error {
 	mappableImage, _, err := i.Loader.CreateImage(i.Device, &core.ImageOptions{
-		Type:   common.ImageType2D,
-		Format: i.Format,
+		ImageType: common.ImageType2D,
+		Format:    i.Format,
 		Extent: common.Extent3D{
 			Width:  i.Width,
 			Height: i.Height,
@@ -67,7 +67,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		ArrayLayers:   1,
 		Samples:       common.Samples1,
 		Tiling:        common.ImageTilingLinear,
-		Usage:         common.ImageTransferDest,
+		Usage:         common.ImageUsageTransferDst,
 		SharingMode:   common.SharingExclusive,
 		InitialLayout: common.LayoutUndefined,
 	})
@@ -292,17 +292,17 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 		if err != nil {
 			return nil, err
 		}
-		usages |= common.ImageTransferDest
+		usages |= common.ImageUsageTransferDst
 	}
 
 	imageOptions := &core.ImageOptions{
-		Type:        common.ImageType2D,
+		ImageType:   common.ImageType2D,
 		Format:      common.FormatR8G8B8A8UnsignedNormalized,
 		Extent:      common.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},
 		MipLevels:   1,
 		ArrayLayers: 1,
 		Samples:     NumSamples,
-		Usage:       common.ImageSampled | usages,
+		Usage:       common.ImageUsageSampled | usages,
 		SharingMode: common.SharingExclusive,
 	}
 	if textureObj.NeedsStaging {
@@ -484,7 +484,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 	/* create image view */
 	textureObj.View, _, err = i.Loader.CreateImageView(i.Device, &core.ImageViewOptions{
 		Image:    textureObj.Image,
-		ViewType: common.View2D,
+		ViewType: common.ViewType2D,
 		Format:   common.FormatR8G8B8A8UnsignedNormalized,
 		Components: common.ComponentMapping{
 			R: common.SwizzleRed,

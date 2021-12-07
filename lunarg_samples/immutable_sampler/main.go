@@ -115,7 +115,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageColorAttachment | common.ImageTransferSrc)
+	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -191,16 +191,16 @@ func main() {
 	//   binding 1 = combined image and immutable sampler
 	resourceBinding := []*core.DescriptorLayoutBinding{
 		{
-			Binding:      0,
-			Type:         common.DescriptorUniformBuffer,
-			Count:        1,
-			ShaderStages: common.StageVertex,
+			Binding:         0,
+			DescriptorType:  common.DescriptorUniformBuffer,
+			DescriptorCount: 1,
+			StageFlags:      common.StageVertex,
 		},
 		{
 			Binding:           1,
-			Type:              common.DescriptorCombinedImageSampler,
-			Count:             1,
-			ShaderStages:      common.StageFragment,
+			DescriptorType:    common.DescriptorCombinedImageSampler,
+			DescriptorCount:   1,
+			StageFlags:        common.StageFragment,
 			ImmutableSamplers: []core.Sampler{immutableSampler},
 		},
 	}
@@ -223,12 +223,12 @@ func main() {
 	// Create a single pool to contain data for our descriptor set
 	poolSizes := []core.PoolSize{
 		{
-			Type:  common.DescriptorUniformBuffer,
-			Count: 1,
+			Type:            common.DescriptorUniformBuffer,
+			DescriptorCount: 1,
 		},
 		{
-			Type:  common.DescriptorCombinedImageSampler,
-			Count: 1,
+			Type:            common.DescriptorCombinedImageSampler,
+			DescriptorCount: 1,
 		},
 	}
 
@@ -250,18 +250,18 @@ func main() {
 
 	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
 		{
-			Destination:             descriptorSets[0],
-			DestinationBinding:      0,
-			DestinationArrayElement: 0,
-			DescriptorType:          common.DescriptorUniformBuffer,
-			BufferInfo:              []core.DescriptorBufferInfo{info.UniformData.BufferInfo},
+			DstSet:          descriptorSets[0],
+			DstBinding:      0,
+			DstArrayElement: 0,
+			DescriptorType:  common.DescriptorUniformBuffer,
+			BufferInfo:      []core.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
 		{
-			Destination:             descriptorSets[0],
-			DestinationBinding:      1,
-			DestinationArrayElement: 0,
-			DescriptorType:          common.DescriptorCombinedImageSampler,
-			ImageInfo:               []core.DescriptorImageInfo{info.TextureData.ImageInfo},
+			DstSet:          descriptorSets[0],
+			DstBinding:      1,
+			DstArrayElement: 0,
+			DescriptorType:  common.DescriptorCombinedImageSampler,
+			ImageInfo:       []core.DescriptorImageInfo{info.TextureData.ImageInfo},
 		},
 	}, nil)
 	if err != nil {
@@ -274,7 +274,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = info.InitPipeline(true)
+	err = info.InitPipeline(true, true)
 	if err != nil {
 		log.Fatalln(err)
 	}

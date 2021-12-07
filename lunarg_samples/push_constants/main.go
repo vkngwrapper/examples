@@ -112,7 +112,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageColorAttachment | common.ImageTransferSrc)
+	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -162,10 +162,10 @@ func main() {
 	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, &core.DescriptorSetLayoutOptions{
 		Bindings: []*core.DescriptorLayoutBinding{
 			{
-				Type:         common.DescriptorUniformBuffer,
-				Count:        1,
-				Binding:      0,
-				ShaderStages: common.StageVertex,
+				DescriptorType:  common.DescriptorUniformBuffer,
+				DescriptorCount: 1,
+				Binding:         0,
+				StageFlags:      common.StageVertex,
 			},
 		},
 	})
@@ -195,12 +195,12 @@ func main() {
 		MaxSets: 1,
 		PoolSizes: []core.PoolSize{
 			{
-				Type:  common.DescriptorUniformBuffer,
-				Count: 1,
+				Type:            common.DescriptorUniformBuffer,
+				DescriptorCount: 1,
 			},
 			{
-				Type:  common.DescriptorCombinedImageSampler,
-				Count: 1,
+				Type:            common.DescriptorCombinedImageSampler,
+				DescriptorCount: 1,
 			},
 		},
 	})
@@ -219,9 +219,9 @@ func main() {
 	// Populate with info about our uniform buffer for MVP
 	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
 		{
-			Destination:             descriptorSets[0],
-			DestinationBinding:      0,
-			DestinationArrayElement: 0,
+			DstSet:          descriptorSets[0],
+			DstBinding:      0,
+			DstArrayElement: 0,
 
 			DescriptorType: common.DescriptorUniformBuffer,
 
@@ -255,7 +255,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitPipeline(true)
+	err = info.InitPipeline(true, true)
 	if err != nil {
 		log.Fatalln(err)
 	}

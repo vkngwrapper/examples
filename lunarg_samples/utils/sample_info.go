@@ -471,7 +471,7 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 	for _, image := range images {
 		view, _, err := i.Loader.CreateImageView(i.Device, &core.ImageViewOptions{
 			Image:    image,
-			ViewType: common.View2D,
+			ViewType: common.ViewType2D,
 			Format:   i.Format,
 			Components: common.ComponentMapping{
 				R: common.SwizzleRed,
@@ -510,8 +510,8 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	props := i.Gpus[0].FormatProperties(depthFormat)
 
 	imageOptions := &core.ImageOptions{
-		Type:   common.ImageType2D,
-		Format: depthFormat,
+		ImageType: common.ImageType2D,
+		Format:    depthFormat,
 		Extent: common.Extent3D{
 			Width:  i.Width,
 			Height: i.Height,
@@ -522,7 +522,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 		Samples:       NumSamples,
 		InitialLayout: common.LayoutUndefined,
 		SharingMode:   common.SharingExclusive,
-		Usage:         common.ImageDepthStencilAttachment,
+		Usage:         common.ImageUsageDepthStencilAttachment,
 	}
 	if (props.LinearTilingFeatures & common.FormatFeatureDepthStencilAttachment) != 0 {
 		imageOptions.Tiling = common.ImageTilingLinear
@@ -573,7 +573,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 			BaseArrayLayer: 0,
 			LayerCount:     1,
 		},
-		ViewType: common.View2D,
+		ViewType: common.ViewType2D,
 	})
 	return err
 }
@@ -664,18 +664,18 @@ func (i *SampleInfo) InitUniformBuffer() error {
 func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 	layoutBindings := []*core.DescriptorLayoutBinding{
 		{
-			Binding:      0,
-			Type:         common.DescriptorUniformBuffer,
-			Count:        1,
-			ShaderStages: common.StageVertex,
+			Binding:         0,
+			DescriptorType:  common.DescriptorUniformBuffer,
+			DescriptorCount: 1,
+			StageFlags:      common.StageVertex,
 		},
 	}
 	if useTexture {
 		layoutBindings = append(layoutBindings, &core.DescriptorLayoutBinding{
-			Binding:      1,
-			Type:         common.DescriptorCombinedImageSampler,
-			Count:        1,
-			ShaderStages: common.StageFragment,
+			Binding:         1,
+			DescriptorType:  common.DescriptorCombinedImageSampler,
+			DescriptorCount: 1,
+			StageFlags:      common.StageFragment,
 		})
 	}
 
@@ -912,15 +912,15 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 func (i *SampleInfo) InitDescriptorPool(useTexture bool) error {
 	poolSizes := []core.PoolSize{
 		{
-			Type:  common.DescriptorUniformBuffer,
-			Count: 1,
+			Type:            common.DescriptorUniformBuffer,
+			DescriptorCount: 1,
 		},
 	}
 
 	if useTexture {
 		poolSizes = append(poolSizes, core.PoolSize{
-			Type:  common.DescriptorCombinedImageSampler,
-			Count: 1,
+			Type:            common.DescriptorCombinedImageSampler,
+			DescriptorCount: 1,
 		})
 	}
 
@@ -944,9 +944,9 @@ func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
 
 	writes := []core.WriteDescriptorSetOptions{
 		{
-			Destination:             i.DescSet[0],
-			DestinationBinding:      0,
-			DestinationArrayElement: 0,
+			DstSet:          i.DescSet[0],
+			DstBinding:      0,
+			DstArrayElement: 0,
 
 			DescriptorType: common.DescriptorUniformBuffer,
 			BufferInfo:     []core.DescriptorBufferInfo{i.UniformData.BufferInfo},
@@ -955,9 +955,9 @@ func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
 
 	if useTexture {
 		writes = append(writes, core.WriteDescriptorSetOptions{
-			Destination:             i.DescSet[0],
-			DestinationBinding:      1,
-			DestinationArrayElement: 0,
+			DstSet:          i.DescSet[0],
+			DstBinding:      1,
+			DstArrayElement: 0,
 
 			DescriptorType: common.DescriptorCombinedImageSampler,
 			ImageInfo:      []core.DescriptorImageInfo{i.TextureData.ImageInfo},
@@ -973,13 +973,10 @@ func (i *SampleInfo) InitPipelineCache() error {
 	return err
 }
 
-func (i *SampleInfo) InitPipeline(depthPresent bool) error {
+func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 	pipelineOptions := &core.GraphicsPipelineOptions{
 		ShaderStages: i.ShaderStages,
-		VertexInput: &core.VertexInputOptions{
-			VertexBindingDescriptions:   []core.VertexBindingDescription{i.VertexBinding},
-			VertexAttributeDescriptions: i.VertexAttributes,
-		},
+		VertexInput:  &core.VertexInputOptions{},
 		InputAssembly: &core.InputAssemblyOptions{
 			EnablePrimitiveRestart: false,
 			Topology:               common.TopologyTriangleList,
@@ -1061,6 +1058,11 @@ func (i *SampleInfo) InitPipeline(depthPresent bool) error {
 		Layout:     i.PipelineLayout,
 		RenderPass: i.RenderPass,
 		SubPass:    0,
+	}
+
+	if vertexPresent {
+		pipelineOptions.VertexInput.VertexBindingDescriptions = []core.VertexBindingDescription{i.VertexBinding}
+		pipelineOptions.VertexInput.VertexAttributeDescriptions = i.VertexAttributes
 	}
 
 	pipelines, _, err := i.Loader.CreateGraphicsPipelines(i.Device, i.PipelineCache,
@@ -1163,6 +1165,26 @@ func (i *SampleInfo) InitSampler() (core.Sampler, error) {
 	})
 
 	return sampler, err
+}
+
+func (i *SampleInfo) ExecuteQueueCmdBuf(cmdBufs []core.CommandBuffer, fence core.Fence) error {
+	/* Queue the command buffer for execution */
+	_, err := i.GraphicsQueue.SubmitToQueue(fence, []*core.SubmitOptions{
+		{
+			WaitSemaphores: []core.Semaphore{i.ImageAcquiredSemaphore},
+			WaitDstStages:  []common.PipelineStages{common.PipelineStageColorAttachmentOutput},
+			CommandBuffers: cmdBufs,
+		},
+	})
+	return err
+}
+
+func (i *SampleInfo) ExecutePresentImage() error {
+	_, _, err := i.Swapchain.PresentToQueue(i.PresentQueue, &khr_swapchain.PresentOptions{
+		Swapchains:   []khr_swapchain.Swapchain{i.Swapchain},
+		ImageIndices: []int{i.CurrentBuffer},
+	})
+	return err
 }
 
 func (i *SampleInfo) DestroyPipeline() {

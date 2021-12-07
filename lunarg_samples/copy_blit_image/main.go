@@ -91,7 +91,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if (surfCapabilities.SupportedImageUsage & common.ImageTransferDest) == 0 {
+	if (surfCapabilities.SupportedImageUsage & common.ImageUsageTransferDst) == 0 {
 		log.Fatalln("Surface cannot be destination of blit - abort")
 	}
 
@@ -120,7 +120,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageColorAttachment | common.ImageTransferDest)
+	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferDst)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -152,14 +152,14 @@ func main() {
 
 	// Create an image, map it, and write some values to the image
 	bltSrcImage, _, err := info.Loader.CreateImage(info.Device, &core.ImageOptions{
-		Type:          common.ImageType2D,
+		ImageType:     common.ImageType2D,
 		Format:        info.Format,
 		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
 		MipLevels:     1,
 		ArrayLayers:   1,
 		Samples:       utils.NumSamples,
 		SharingMode:   common.SharingExclusive,
-		Usage:         common.ImageTransferSrc,
+		Usage:         common.ImageUsageTransferSrc,
 		Tiling:        common.ImageTilingLinear,
 		InitialLayout: common.LayoutUndefined,
 	})

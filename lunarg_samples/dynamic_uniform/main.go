@@ -122,7 +122,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageColorAttachment | common.ImageTransferSrc)
+	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -239,10 +239,10 @@ func main() {
 	 * UNIFORM_BUFFER_DYNAMIC */
 	layoutBindings := []*core.DescriptorLayoutBinding{
 		{
-			Binding:      0,
-			Type:         common.DescriptorUniformBufferDynamic,
-			Count:        1,
-			ShaderStages: common.StageVertex,
+			Binding:         0,
+			DescriptorType:  common.DescriptorUniformBufferDynamic,
+			DescriptorCount: 1,
+			StageFlags:      common.StageVertex,
 		},
 	}
 
@@ -267,8 +267,8 @@ func main() {
 		MaxSets: 1,
 		PoolSizes: []core.PoolSize{
 			{
-				Type:  common.DescriptorUniformBufferDynamic,
-				Count: 1,
+				Type:            common.DescriptorUniformBufferDynamic,
+				DescriptorCount: 1,
 			},
 		},
 	})
@@ -285,10 +285,10 @@ func main() {
 
 	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
 		{
-			Destination:             info.DescSet[0],
-			DestinationBinding:      0,
-			DestinationArrayElement: 0,
-			DescriptorType:          common.DescriptorUniformBufferDynamic,
+			DstSet:          info.DescSet[0],
+			DstBinding:      0,
+			DstArrayElement: 0,
+			DescriptorType:  common.DescriptorUniformBufferDynamic,
 
 			BufferInfo: []core.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
@@ -302,7 +302,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitPipeline(true)
+	err = info.InitPipeline(true, true)
 	if err != nil {
 		log.Fatalln(err)
 	}
