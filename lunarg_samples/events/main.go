@@ -65,7 +65,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// Start with a trivial command buffer and make sure fence wait doesn't time out
-	info.Cmd.CmdSetViewport(0, []common.Viewport{
+	info.Cmd.CmdSetViewport([]common.Viewport{
 		{
 			X:        0,
 			Y:        0,

@@ -607,7 +607,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 
 	var err error
 	i.UniformData.Buf, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
-		Usages:      common.UsageUniformBuffer,
+		Usage:       common.UsageUniformBuffer,
 		BufferSize:  int(unsafe.Sizeof(i.MVP)),
 		SharingMode: common.SharingExclusive,
 	})
@@ -693,7 +693,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 	return err
 }
 
-func (i *SampleInfo) InitRenderPass(depthPresent bool) error {
+func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initialLayout common.ImageLayout) error {
 	attachments := []core.AttachmentDescription{
 		{
 			Format:         i.Format,
@@ -702,9 +702,13 @@ func (i *SampleInfo) InitRenderPass(depthPresent bool) error {
 			StoreOp:        common.StoreOpStore,
 			StencilLoadOp:  common.LoadOpDontCare,
 			StencilStoreOp: common.StoreOpDontCare,
-			InitialLayout:  common.LayoutUndefined,
-			FinalLayout:    common.LayoutPresentSrcKHR,
+			InitialLayout:  initialLayout,
+			FinalLayout:    finalLayout,
 		},
+	}
+
+	if !clear {
+		attachments[0].LoadOp = common.LoadOpLoad
 	}
 
 	if depthPresent {
@@ -718,6 +722,10 @@ func (i *SampleInfo) InitRenderPass(depthPresent bool) error {
 			InitialLayout:  common.LayoutUndefined,
 			FinalLayout:    common.LayoutDepthStencilAttachmentOptimal,
 		})
+
+		if !clear {
+			attachments[1].LoadOp = common.LoadOpDontCare
+		}
 	}
 
 	renderPassOptions := &core.RenderPassOptions{
@@ -834,7 +842,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 	var err error
 	i.VertexBuffer.Buf, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
 		BufferSize:  dataSize,
-		Usages:      common.UsageVertexBuffer,
+		Usage:       common.UsageVertexBuffer,
 		SharingMode: common.SharingExclusive,
 	})
 	if err != nil {
@@ -1116,7 +1124,7 @@ func (i *SampleInfo) InitViewports() {
 		MinDepth: 0,
 		MaxDepth: 1,
 	}
-	i.Cmd.CmdSetViewport(0, []common.Viewport{i.Viewport})
+	i.Cmd.CmdSetViewport([]common.Viewport{i.Viewport})
 }
 
 func (i *SampleInfo) InitScissors() {
@@ -1124,7 +1132,7 @@ func (i *SampleInfo) InitScissors() {
 		Offset: common.Offset2D{0, 0},
 		Extent: common.Extent2D{i.Width, i.Height},
 	}
-	i.Cmd.CmdSetScissor(0, []common.Rect2D{i.Scissor})
+	i.Cmd.CmdSetScissor([]common.Rect2D{i.Scissor})
 }
 
 func (i *SampleInfo) InitFence() (core.Fence, error) {

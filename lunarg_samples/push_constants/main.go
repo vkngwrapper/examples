@@ -127,7 +127,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true)
+	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -276,7 +276,7 @@ func main() {
 
 	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
 	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, descriptorSets, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
 	info.Cmd.CmdDraw(36, 1, 0, 0)
@@ -351,5 +351,8 @@ func main() {
 	info.Surface.Destroy()
 	debugMessenger.Destroy()
 	info.DestroyInstance()
-	info.Window.Destroy()
+	err = info.Window.Destroy()
+	if err != nil {
+		log.Fatalln(err)
+	}
 }

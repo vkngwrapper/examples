@@ -237,7 +237,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	var err error
 	textureObj.Buffer, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
 		BufferSize:  textureObj.TexWidth * textureObj.TexHeight * 4,
-		Usages:      common.UsageTransferSrc,
+		Usage:       common.UsageTransferSrc,
 		SharingMode: common.SharingExclusive,
 	})
 	if err != nil {

@@ -175,7 +175,7 @@ func main() {
 	}
 
 	// Clear the input attachment image to yellow
-	info.Cmd.CmdClearColorImage(inputImage, common.LayoutTransferDstOptimal, &core.ClearValueFloat{1, 1, 0, 0}, []*common.ImageSubresourceRange{
+	info.Cmd.CmdClearColorImage(inputImage, common.LayoutTransferDstOptimal, &core.ClearValueFloat{1, 1, 0, 0}, []common.ImageSubresourceRange{
 		{
 			AspectMask:     common.AspectColor,
 			BaseMipLevel:   0,

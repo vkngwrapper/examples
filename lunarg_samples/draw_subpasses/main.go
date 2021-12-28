@@ -460,7 +460,7 @@ func main() {
 
 	info.Cmd.CmdBindPipeline(common.BindGraphics, stencilCubePipe[0])
 	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	viewports := []common.Viewport{
 		{
@@ -472,7 +472,7 @@ func main() {
 			MaxDepth: 1,
 		},
 	}
-	info.Cmd.CmdSetViewport(0, viewports)
+	info.Cmd.CmdSetViewport(viewports)
 
 	scissors := []common.Rect2D{
 		{
@@ -480,7 +480,7 @@ func main() {
 			Extent: common.Extent2D{info.Width / 2, info.Height},
 		},
 	}
-	info.Cmd.CmdSetScissor(0, scissors)
+	info.Cmd.CmdSetScissor(scissors)
 
 	/* Draw the cube into stencil */
 	info.Cmd.CmdDraw(36, 1, 0, 0)
@@ -491,8 +491,8 @@ func main() {
 	/* Bind the fullscreen pass pipeline */
 	info.Cmd.CmdBindPipeline(common.BindGraphics, stencilFullscreenPipe[0])
 
-	info.Cmd.CmdSetViewport(0, viewports)
-	info.Cmd.CmdSetScissor(0, scissors)
+	info.Cmd.CmdSetViewport(viewports)
+	info.Cmd.CmdSetScissor(scissors)
 
 	/* Draw the fullscreen pass */
 	info.Cmd.CmdDraw(4, 1, 0, 0)
@@ -624,9 +624,9 @@ func main() {
 
 	info.Cmd.CmdBindPipeline(common.BindGraphics, blendCubePipe[0])
 	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core.Buffer{info.VertexBuffer.Buf}, []int{0})
-	info.Cmd.CmdSetViewport(0, viewports)
-	info.Cmd.CmdSetScissor(0, scissors)
+	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdSetViewport(viewports)
+	info.Cmd.CmdSetScissor(scissors)
 
 	/* Draw the cube blending */
 	info.Cmd.CmdDraw(36, 1, 0, 0)
@@ -643,8 +643,8 @@ func main() {
 	viewports[0].Width -= 50
 	viewports[0].Height -= 300
 
-	info.Cmd.CmdSetViewport(0, viewports)
-	info.Cmd.CmdSetScissor(0, scissors)
+	info.Cmd.CmdSetViewport(viewports)
+	info.Cmd.CmdSetScissor(scissors)
 	info.Cmd.CmdDraw(4, 1, 0, 0)
 
 	/* The second renderpass is complete */

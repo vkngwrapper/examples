@@ -132,7 +132,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true)
+	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -181,7 +181,7 @@ func main() {
 	}
 
 	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, &core.BufferOptions{
-		Usages:      common.UsageUniformBuffer,
+		Usage:       common.UsageUniformBuffer,
 		BufferSize:  2 * bufSize,
 		SharingMode: common.SharingExclusive,
 	})
@@ -343,7 +343,7 @@ func main() {
 	/* The first draw should use the first matrix in the buffer */
 	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, []int{0})
 
-	info.Cmd.CmdBindVertexBuffers(0, []core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	info.InitViewports()
 	info.InitScissors()
