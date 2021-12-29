@@ -21,6 +21,15 @@ func logDebug(msgType ext_debug_utils.MessageType, severity ext_debug_utils.Mess
 	return false
 }
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Use push constants in a simple shader, validate the correct value was read.
+*/
+
+// This sample submits two push constants and pairs them with a shader
+// that simply reads in the values, ensures they are correct.  If correct
+// values are read, the shader draws green.  If incorrect, shader draws red.
+
 func main() {
 	info := &utils.SampleInfo{}
 	err := info.ProcessCommandLineArgs()

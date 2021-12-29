@@ -50,6 +50,13 @@ var commandPools [3]core.CommandPool
 var commandBuffers [3]core.CommandBuffer
 var vertexBuffers [3]vertexData
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Use per-thread command buffers to draw 3 triangles
+*/
+
+/* Set up Vulkan pipeline and use three threads to create 3       */
+/* command buffers, each using a vertex buffer to draw a triangle */
 func main() {
 	info := &utils.SampleInfo{}
 	err := info.ProcessCommandLineArgs()

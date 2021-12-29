@@ -25,6 +25,15 @@ func logDebug(msgType ext_debug_utils.MessageType, severity ext_debug_utils.Mess
 	return false
 }
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Render two multi-subpass render passes with different framebuffer attachments
+*/
+/**
+ *  Sample using multiple render passes per framebuffer (different x,y extents)
+ *  and multiple subpasses per renderpass.
+ */
+
 func main() {
 	info := &utils.SampleInfo{}
 	err := info.ProcessCommandLineArgs()

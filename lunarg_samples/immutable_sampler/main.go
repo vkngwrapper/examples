@@ -24,6 +24,14 @@ func logDebug(msgType ext_debug_utils.MessageType, severity ext_debug_utils.Mess
 	return false
 }
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Use an immutable sampler to texture a cube.
+*/
+
+// This sample is based on template and uses an immutable sampler,
+// along with a sampled image.  It should render the LunarG textured cube.
+
 func main() {
 	info := &utils.SampleInfo{}
 	err := info.ProcessCommandLineArgs()

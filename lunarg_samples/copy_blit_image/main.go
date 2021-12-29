@@ -20,6 +20,16 @@ func logDebug(msgType ext_debug_utils.MessageType, severity ext_debug_utils.Mess
 	return false
 }
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Copy/blit image
+*/
+
+/* Create a checkerboard image, and blit a small area of it to the
+ * presentation image. We should see bigger sqaures.  Then copy part of
+ * the checkboard to the presentation image - we should see small squares
+ */
+
 func main() {
 	info := &utils.SampleInfo{}
 	err := info.ProcessCommandLineArgs()

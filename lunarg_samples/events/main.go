@@ -8,6 +8,11 @@ import (
 	"log"
 )
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Use basic events
+*/
+
 func main() {
 	loader, err := core.CreateStaticLinkedLoader()
 	if err != nil {

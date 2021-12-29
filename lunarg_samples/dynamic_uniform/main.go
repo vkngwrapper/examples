@@ -27,6 +27,15 @@ func logDebug(msgType ext_debug_utils.MessageType, severity ext_debug_utils.Mess
 	return false
 }
 
+/*
+VULKAN_SAMPLE_SHORT_DESCRIPTION
+Draw 2 Cubes using dynamic uniform buffer
+*/
+/* This sample builds upon the drawcube sample by using a dynamic uniform */
+/* buffer to store two transformation matrices, using the first matrix on */
+/* the first draw, and then specifying an offset to the second matrix in  */
+/* the buffer for the second draw, resulting in 2 cubes offset from each  */
+/* other                                                                  */
 func main() {
 	info := &utils.SampleInfo{}
 	err := info.ProcessCommandLineArgs()
