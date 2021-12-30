@@ -181,7 +181,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	textureObj, err := info.InitImage(imageFile)
+	textureObj, err := info.InitImage(imageFile, 0, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}

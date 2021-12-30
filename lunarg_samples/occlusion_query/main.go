@@ -85,7 +85,7 @@ func main() {
 		Callback:          logDebug,
 	}
 
-	err = info.InitInstance("Simple Push Constants", debugOptions)
+	err = info.InitInstance("Occlusion Query", debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}

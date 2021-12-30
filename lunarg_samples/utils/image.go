@@ -266,7 +266,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	return err
 }
 
-func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) {
+func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.ImageUsages, extraFeatures common.FormatFeatures) (*TextureObject, error) {
 	image, _, err := image.Decode(textureReader)
 	if err != nil {
 		return nil, err
@@ -280,8 +280,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 
 	/* See if we can use a linear tiled image for a texture, if not, we will
 	 * need a staging buffer for the texture data */
-	allFeatures := common.FormatFeatureSampledImage
-	var usages common.ImageUsages
+	allFeatures := common.FormatFeatureSampledImage | extraFeatures
 	textureObj.NeedsStaging = (formatProps.LinearTilingFeatures & allFeatures) != allFeatures
 
 	if textureObj.NeedsStaging {
@@ -292,7 +291,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 		if err != nil {
 			return nil, err
 		}
-		usages |= common.ImageUsageTransferDst
+		extraUsages |= common.ImageUsageTransferDst
 	}
 
 	imageOptions := &core.ImageOptions{
@@ -302,7 +301,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 		MipLevels:   1,
 		ArrayLayers: 1,
 		Samples:     NumSamples,
-		Usage:       common.ImageUsageSampled | usages,
+		Usage:       common.ImageUsageSampled | extraUsages,
 		SharingMode: common.SharingExclusive,
 	}
 	if textureObj.NeedsStaging {
@@ -501,4 +500,44 @@ func (i *SampleInfo) InitImage(textureReader io.Reader) (*TextureObject, error) 
 		},
 	})
 	return textureObj, err
+}
+
+func (i *SampleInfo) InitTexture(textureReader io.Reader, extraUsages common.ImageUsages, extraFeatures common.FormatFeatures) error {
+	/* create image */
+	texObj, err := i.InitImage(textureReader, extraUsages, extraFeatures)
+	if err != nil {
+		return err
+	}
+
+	/* create sampler */
+	texObj.Sampler, err = i.InitSampler()
+	if err != nil {
+		return err
+	}
+
+	i.Textures = append(i.Textures, texObj)
+
+	/* track a description of the texture */
+	i.TextureData.ImageInfo.ImageView = texObj.View
+	i.TextureData.ImageInfo.Sampler = texObj.Sampler
+	i.TextureData.ImageInfo.ImageLayout = common.LayoutShaderReadOnlyOptimal
+
+	return nil
+}
+
+func (i *SampleInfo) DestroyTextures() {
+	for ind := 0; ind < len(i.Textures); ind++ {
+		i.Textures[ind].Sampler.Destroy()
+		i.Textures[ind].View.Destroy()
+		i.Textures[ind].Image.Destroy()
+		i.Device.FreeMemory(i.Textures[ind].ImageMemory)
+
+		if i.Textures[ind].Buffer != nil {
+			i.Textures[ind].Buffer.Destroy()
+		}
+
+		if i.Textures[ind].BufferMemory != nil {
+			i.Device.FreeMemory(i.Textures[ind].BufferMemory)
+		}
+	}
 }
