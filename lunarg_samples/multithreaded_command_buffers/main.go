@@ -312,10 +312,12 @@ func main() {
 		nil,
 		[]*core.ImageMemoryBarrierOptions{
 			{
-				SrcAccessMask: common.AccessColorAttachmentWrite,
-				DstAccessMask: common.AccessMemoryRead,
-				OldLayout:     common.LayoutColorAttachmentOptimal,
-				NewLayout:     common.LayoutPresentSrcKHR,
+				SrcAccessMask:       common.AccessColorAttachmentWrite,
+				DstAccessMask:       common.AccessMemoryRead,
+				OldLayout:           common.LayoutColorAttachmentOptimal,
+				NewLayout:           common.LayoutPresentSrcKHR,
+				SrcQueueFamilyIndex: -1,
+				DstQueueFamilyIndex: -1,
 				SubresourceRange: common.ImageSubresourceRange{
 					AspectMask:     common.AspectColor,
 					BaseMipLevel:   0,
