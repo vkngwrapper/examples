@@ -350,7 +350,7 @@ func main() {
 	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
 
 	/* The first draw should use the first matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, []int{0})
+	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, []int{0})
 
 	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 
@@ -361,7 +361,7 @@ func main() {
 
 	/* The second draw should use the
 	   second matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, []int{bufSize})
+	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, []int{bufSize})
 	info.Cmd.CmdDraw(36, 1, 0, 0)
 
 	info.Cmd.CmdEndRenderPass()

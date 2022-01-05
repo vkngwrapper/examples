@@ -284,7 +284,7 @@ func main() {
 	}
 
 	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, descriptorSets, nil)
+	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, descriptorSets, nil)
 	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()

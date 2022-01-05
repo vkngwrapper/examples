@@ -468,7 +468,7 @@ func main() {
 	info.Cmd.CmdBeginRenderPass(core.ContentsInline, renderPassBegin)
 
 	info.Cmd.CmdBindPipeline(common.BindGraphics, stencilCubePipe[0])
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, nil)
+	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
 	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	viewports := []common.Viewport{
@@ -632,7 +632,7 @@ func main() {
 	}
 
 	info.Cmd.CmdBindPipeline(common.BindGraphics, blendCubePipe[0])
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, 0, info.DescSet, nil)
+	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
 	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.Cmd.CmdSetViewport(viewports)
 	info.Cmd.CmdSetScissor(scissors)

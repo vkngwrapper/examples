@@ -74,7 +74,7 @@ func main() {
 		Callback:          logDebug,
 	}
 
-	err = info.InitInstance("Simple Push Constants", debugOptions)
+	err = info.InitInstance("Secondary Command Buffers", debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
