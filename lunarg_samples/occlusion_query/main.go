@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/binary"
 	"fmt"
@@ -331,8 +332,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
+	resultData, _, err := queryPool.PopulateResults(0, 2, 32, 8, common.QueryResult64Bit|common.QueryResultWait)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	resultReader := bytes.NewBuffer(resultData)
 	samplesPassed := []uint64{0, 0, 0, 0}
-	_, err = queryPool.PopulateResults(0, 2, samplesPassed, common.QueryResult64Bit|common.QueryResultWait)
+	err = binary.Read(resultReader, common.ByteOrder, samplesPassed)
 	if err != nil {
 		log.Fatalln(err)
 	}

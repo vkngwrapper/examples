@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
@@ -252,10 +253,13 @@ func main() {
 		log.Fatalln("Too many push constants")
 	}
 
-	err = info.Cmd.CmdPushConstants(info.PipelineLayout, common.StageFragment, 0, pushConstants)
+	pushWriter := bytes.NewBuffer(make([]byte, 0, pushConstantsSize))
+	err = binary.Write(pushWriter, common.ByteOrder, pushConstants)
 	if err != nil {
-		log.Fatalln()
+		log.Fatalln(err)
 	}
+
+	info.Cmd.CmdPushConstants(info.PipelineLayout, common.StageFragment, 0, pushWriter.Bytes())
 
 	/* VULKAN_KEY_END */
 
