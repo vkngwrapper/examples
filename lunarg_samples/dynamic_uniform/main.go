@@ -189,7 +189,7 @@ func main() {
 			^(info.GpuProps.Limits.MinUniformBufferOffsetAlignment - 1)
 	}
 
-	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, &core.BufferOptions{
+	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
 		Usage:       common.UsageUniformBuffer,
 		BufferSize:  2 * bufSize,
 		SharingMode: common.SharingExclusive,

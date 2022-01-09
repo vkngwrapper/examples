@@ -141,7 +141,7 @@ func main() {
 		log.Fatalln("unsized texels")
 	}
 
-	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, &core.BufferOptions{
+	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
 		Usage:       common.UsageUniformTexelBuffer,
 		BufferSize:  texelSize,
 		SharingMode: common.SharingExclusive,

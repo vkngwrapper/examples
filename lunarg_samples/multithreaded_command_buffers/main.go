@@ -440,7 +440,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	}
 	commandBuffers[i] = buffers[0]
 
-	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, &core.BufferOptions{
+	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
 		BufferSize:  3 * int(unsafe.Sizeof(triData[0])),
 		Usage:       common.UsageVertexBuffer,
 		SharingMode: common.SharingExclusive,

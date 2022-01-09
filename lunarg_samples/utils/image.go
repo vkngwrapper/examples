@@ -235,7 +235,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 
 func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	var err error
-	textureObj.Buffer, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
+	textureObj.Buffer, _, err = i.Loader.CreateBuffer(i.Device, nil, &core.BufferOptions{
 		BufferSize:  textureObj.TexWidth * textureObj.TexHeight * 4,
 		Usage:       common.UsageTransferSrc,
 		SharingMode: common.SharingExclusive,

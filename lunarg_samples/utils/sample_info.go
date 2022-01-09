@@ -606,7 +606,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 	i.MVP = i.Clip.Mul4(i.Projection).Mul4(i.View).Mul4(i.Model)
 
 	var err error
-	i.UniformData.Buf, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
+	i.UniformData.Buf, _, err = i.Loader.CreateBuffer(i.Device, nil, &core.BufferOptions{
 		Usage:       common.UsageUniformBuffer,
 		BufferSize:  int(unsafe.Sizeof(i.MVP)),
 		SharingMode: common.SharingExclusive,
@@ -840,7 +840,7 @@ func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 
 func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dataStride int, useTexture bool) error {
 	var err error
-	i.VertexBuffer.Buf, _, err = i.Loader.CreateBuffer(i.Device, &core.BufferOptions{
+	i.VertexBuffer.Buf, _, err = i.Loader.CreateBuffer(i.Device, nil, &core.BufferOptions{
 		BufferSize:  dataSize,
 		Usage:       common.UsageVertexBuffer,
 		SharingMode: common.SharingExclusive,
