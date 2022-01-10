@@ -73,7 +73,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -133,7 +133,7 @@ func main() {
 	// Create the image that will be used as the input attachment
 	// The image for the color attachment is the presentable image already
 	// created in init_swapchain()
-	inputImage, _, err := info.Loader.CreateImage(info.Device, &core.ImageOptions{
+	inputImage, _, err := info.Loader.CreateImage(info.Device, nil, &core.ImageOptions{
 		ImageType:     common.ImageType2D,
 		Format:        info.Format,
 		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
@@ -155,7 +155,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	inputMemory, _, err := info.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	inputMemory, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -191,7 +191,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	inputAttachmentView, _, err := info.Loader.CreateImageView(info.Device, &core.ImageViewOptions{
+	inputAttachmentView, _, err := info.Loader.CreateImageView(info.Device, nil, &core.ImageViewOptions{
 		Image:    inputImage,
 		ViewType: common.ViewType2D,
 		Format:   info.Format,
@@ -213,7 +213,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, &core.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
 		Bindings: []*core.DescriptorLayoutBinding{
 			{
 				Binding:         0,
@@ -228,7 +228,7 @@ func main() {
 	}
 	info.DescLayout = []core.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
@@ -283,7 +283,7 @@ func main() {
 		DstAccessMask:   common.AccessColorAttachmentWrite,
 	}
 
-	info.RenderPass, _, err = info.Loader.CreateRenderPass(info.Device, &core.RenderPassOptions{
+	info.RenderPass, _, err = info.Loader.CreateRenderPass(info.Device, nil, &core.RenderPassOptions{
 		Attachments:         attachments,
 		SubPasses:           []core.SubPass{subpass},
 		SubPassDependencies: []core.SubPassDependency{subpassDependency},
@@ -308,7 +308,7 @@ func main() {
 	}
 
 	for i := 0; i < info.SwapchainImageCount; i++ {
-		framebuffer, _, err := info.Loader.CreateFrameBuffer(info.Device, &core.FramebufferOptions{
+		framebuffer, _, err := info.Loader.CreateFrameBuffer(info.Device, nil, &core.FramebufferOptions{
 			RenderPass:  info.RenderPass,
 			Attachments: []core.ImageView{info.Buffers[i].View, inputAttachmentView},
 			Width:       info.Width,
@@ -321,7 +321,7 @@ func main() {
 		info.Framebuffer = append(info.Framebuffer, framebuffer)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, &core.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
 		MaxSets: 1,
 		PoolSizes: []core.PoolSize{
 			{
@@ -369,7 +369,7 @@ func main() {
 	}
 
 	// Color attachment clear to gray
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, &core.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -412,7 +412,7 @@ func main() {
 
 	/* VULKAN_KEY_END */
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

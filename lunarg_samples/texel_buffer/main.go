@@ -82,7 +82,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -157,7 +157,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	texelMem, _, err := info.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	texelMem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -185,7 +185,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	texelView, _, err := info.Loader.CreateBufferView(info.Device, &core.BufferViewOptions{
+	texelView, _, err := info.Loader.CreateBufferView(info.Device, nil, &core.BufferViewOptions{
 		Buffer: texelBuf,
 		Format: common.FormatR32SignedFloat,
 		Offset: 0,
@@ -197,7 +197,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, &core.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
 		Bindings: []*core.DescriptorLayoutBinding{
 			{
 				Binding:         0,
@@ -213,7 +213,7 @@ func main() {
 	info.DescLayout = append(info.DescLayout, descLayout)
 
 	/* Now use the descriptor layout to create a pipeline layout */
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
@@ -245,7 +245,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, &core.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
 		MaxSets: 1,
 		PoolSizes: []core.PoolSize{
 			{
@@ -292,7 +292,7 @@ func main() {
 
 	/* VULKAN_KEY_START */
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, &core.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -338,7 +338,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

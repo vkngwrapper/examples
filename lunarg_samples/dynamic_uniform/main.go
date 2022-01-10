@@ -87,7 +87,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -205,7 +205,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.UniformData.Mem, _, err = info.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -257,7 +257,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, &core.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
@@ -265,14 +265,14 @@ func main() {
 	}
 	info.DescLayout = []core.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, &core.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
 		MaxSets: 1,
 		PoolSizes: []core.PoolSize{
 			{
@@ -321,7 +321,7 @@ func main() {
 		core.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -369,7 +369,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Loader.CreateFence(info.Device, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

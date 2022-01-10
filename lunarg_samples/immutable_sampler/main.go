@@ -83,7 +83,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -213,7 +213,7 @@ func main() {
 		},
 	}
 
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, &core.DescriptorSetLayoutOptions{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
 		Bindings: resourceBinding,
 	})
 	if err != nil {
@@ -221,7 +221,7 @@ func main() {
 	}
 
 	// Create pipeline layout
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
 		SetLayouts: []core.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
@@ -240,7 +240,7 @@ func main() {
 		},
 	}
 
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, &core.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
 		MaxSets:   descriptorSetCount,
 		PoolSizes: poolSizes,
 	})

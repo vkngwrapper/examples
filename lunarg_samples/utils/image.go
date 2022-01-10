@@ -55,7 +55,7 @@ func (i *SampleInfo) SetImageLayout(image core.Image, aspectMask common.ImageAsp
 }
 
 func (i *SampleInfo) WritePNG(baseName string) error {
-	mappableImage, _, err := i.Loader.CreateImage(i.Device, &core.ImageOptions{
+	mappableImage, _, err := i.Loader.CreateImage(i.Device, nil, &core.ImageOptions{
 		ImageType: common.ImageType2D,
 		Format:    i.Format,
 		Extent: common.Extent3D{
@@ -81,7 +81,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	mappableMemory, _, err := i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	mappableMemory, _, err := i.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -146,7 +146,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	cmdFence, _, err := i.Loader.CreateFence(i.Device, &core.FenceOptions{})
+	cmdFence, _, err := i.Loader.CreateFence(i.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	}
 
 	/* allocate memory */
-	textureObj.BufferMemory, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	textureObj.BufferMemory, _, err = i.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -312,7 +312,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 		imageOptions.InitialLayout = common.LayoutPreInitialized
 	}
 
-	textureObj.Image, _, err = i.Loader.CreateImage(i.Device, imageOptions)
+	textureObj.Image, _, err = i.Loader.CreateImage(i.Device, nil, imageOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +330,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	}
 
 	/* allocate memory */
-	textureObj.ImageMemory, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	textureObj.ImageMemory, _, err = i.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -349,7 +349,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 		return nil, err
 	}
 
-	cmdFence, _, err := i.Loader.CreateFence(i.Device, &core.FenceOptions{})
+	cmdFence, _, err := i.Loader.CreateFence(i.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -481,7 +481,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	}
 
 	/* create image view */
-	textureObj.View, _, err = i.Loader.CreateImageView(i.Device, &core.ImageViewOptions{
+	textureObj.View, _, err = i.Loader.CreateImageView(i.Device, nil, &core.ImageViewOptions{
 		Image:    textureObj.Image,
 		ViewType: common.ViewType2D,
 		Format:   common.FormatR8G8B8A8UnsignedNormalized,

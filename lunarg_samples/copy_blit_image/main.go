@@ -81,7 +81,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -141,7 +141,7 @@ func main() {
 		log.Fatalln("FOrmat cannot be used as transfer source")
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -161,7 +161,7 @@ func main() {
 	}
 
 	// Create an image, map it, and write some values to the image
-	bltSrcImage, _, err := info.Loader.CreateImage(info.Device, &core.ImageOptions{
+	bltSrcImage, _, err := info.Loader.CreateImage(info.Device, nil, &core.ImageOptions{
 		ImageType:     common.ImageType2D,
 		Format:        info.Format,
 		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
@@ -183,7 +183,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	dmem, _, err := info.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	dmem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReq.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -390,7 +390,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

@@ -108,7 +108,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -153,7 +153,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, &core.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -171,7 +171,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, &core.PipelineLayoutOptions{})
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -343,7 +343,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -424,7 +424,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	/* triangle                                                             */
 	var err error
 
-	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, &core.CommandPoolOptions{
+	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, &core.CommandPoolOptions{
 		GraphicsQueueFamily: &info.GraphicsQueueFamilyIndex,
 	})
 	if err != nil {
@@ -456,7 +456,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	vertexMem, _, err := info.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	vertexMem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})

@@ -82,7 +82,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -169,7 +169,7 @@ func main() {
 
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, &core.DescriptorSetLayoutOptions{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
 		Bindings: []*core.DescriptorLayoutBinding{
 			{
 				DescriptorType:  common.DescriptorUniformBuffer,
@@ -192,7 +192,7 @@ func main() {
 	}
 
 	// Create pipeline layout with multiple descriptor sets
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
 		PushConstantRanges: pushConstantRanges,
 		SetLayouts:         []core.DescriptorSetLayout{descriptorLayout},
 	})
@@ -201,7 +201,7 @@ func main() {
 	}
 
 	// Create a single pool to contain data for our descriptor set
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, &core.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
 		MaxSets: 1,
 		PoolSizes: []core.PoolSize{
 			{

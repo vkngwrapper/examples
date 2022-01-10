@@ -89,7 +89,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -317,7 +317,7 @@ func main() {
 	}
 
 	// Feed the initial cache data into cache creation
-	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, &core.PipelineCacheOptions{
+	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, nil, &core.PipelineCacheOptions{
 		InitialData: pipelineData,
 	})
 	if err != nil {

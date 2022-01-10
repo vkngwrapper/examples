@@ -92,7 +92,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -209,7 +209,7 @@ func main() {
 		core.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -237,7 +237,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryResultMem, _, err := info.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	queryResultMem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -250,7 +250,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, &core.QueryPoolOptions{
+	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, &core.QueryPoolOptions{
 		QueryType:  common.QueryTypeOcclusion,
 		QueryCount: 2,
 	})
@@ -310,7 +310,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

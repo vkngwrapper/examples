@@ -179,7 +179,7 @@ func (i *SampleInfo) InitInstanceExtensionNames() error {
 
 func (i *SampleInfo) InitInstance(appShortName string, next common.Options) error {
 	var err error
-	i.Instance, _, err = i.Loader.CreateInstance(&core.InstanceOptions{
+	i.Instance, _, err = i.Loader.CreateInstance(nil, &core.InstanceOptions{
 		ApplicationName:    appShortName,
 		ApplicationVersion: common.CreateVersion(0, 0, 1),
 		EngineName:         appShortName,
@@ -312,7 +312,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 
 func (i *SampleInfo) InitDevice() error {
 	var err error
-	i.Device, _, err = i.Loader.CreateDevice(i.Gpus[0], &core.DeviceOptions{
+	i.Device, _, err = i.Loader.CreateDevice(i.Gpus[0], nil, &core.DeviceOptions{
 		QueueFamilies: []*core.QueueFamilyOptions{
 			{
 				QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
@@ -326,7 +326,7 @@ func (i *SampleInfo) InitDevice() error {
 
 func (i *SampleInfo) InitCommandPool() error {
 	var err error
-	i.CmdPool, _, err = i.Loader.CreateCommandPool(i.Device, &core.CommandPoolOptions{
+	i.CmdPool, _, err = i.Loader.CreateCommandPool(i.Device, nil, &core.CommandPoolOptions{
 		GraphicsQueueFamily: &i.GraphicsQueueFamilyIndex,
 		Flags:               core.CommandPoolResetBuffer,
 	})
@@ -457,7 +457,7 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 		}
 	}
 
-	i.Swapchain, _, err = swapchainLoader.CreateSwapchain(i.Device, swapchainOptions)
+	i.Swapchain, _, err = swapchainLoader.CreateSwapchain(i.Device, nil, swapchainOptions)
 	if err != nil {
 		return err
 	}
@@ -469,7 +469,7 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 	i.SwapchainImageCount = len(images)
 
 	for _, image := range images {
-		view, _, err := i.Loader.CreateImageView(i.Device, &core.ImageViewOptions{
+		view, _, err := i.Loader.CreateImageView(i.Device, nil, &core.ImageViewOptions{
 			Image:    image,
 			ViewType: common.ViewType2D,
 			Format:   i.Format,
@@ -533,7 +533,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	}
 
 	var err error
-	i.Depth.Image, _, err = i.Loader.CreateImage(i.Device, imageOptions)
+	i.Depth.Image, _, err = i.Loader.CreateImage(i.Device, nil, imageOptions)
 	if err != nil {
 		return err
 	}
@@ -544,7 +544,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 		return err
 	}
 
-	i.Depth.Mem, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	i.Depth.Mem, _, err = i.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  imageMemoryReqs.Size,
 		MemoryTypeIndex: typeIndex,
 	})
@@ -557,7 +557,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 		return err
 	}
 
-	i.Depth.View, _, err = i.Loader.CreateImageView(i.Device, &core.ImageViewOptions{
+	i.Depth.View, _, err = i.Loader.CreateImageView(i.Device, nil, &core.ImageViewOptions{
 		Image:  i.Depth.Image,
 		Format: depthFormat,
 		Components: common.ComponentMapping{
@@ -621,7 +621,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 		return err
 	}
 
-	i.UniformData.Mem, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	i.UniformData.Mem, _, err = i.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -679,7 +679,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 		})
 	}
 
-	layout, _, err := i.Loader.CreateDescriptorSetLayout(i.Device, &core.DescriptorSetLayoutOptions{
+	layout, _, err := i.Loader.CreateDescriptorSetLayout(i.Device, nil, &core.DescriptorSetLayoutOptions{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
@@ -687,7 +687,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 	}
 
 	i.DescLayout = []core.DescriptorSetLayout{layout}
-	i.PipelineLayout, _, err = i.Loader.CreatePipelineLayout(i.Device, &core.PipelineLayoutOptions{
+	i.PipelineLayout, _, err = i.Loader.CreatePipelineLayout(i.Device, nil, &core.PipelineLayoutOptions{
 		SetLayouts: []core.DescriptorSetLayout{layout},
 	})
 	return err
@@ -761,7 +761,7 @@ func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initi
 	}
 
 	var err error
-	i.RenderPass, _, err = i.Loader.CreateRenderPass(i.Device, renderPassOptions)
+	i.RenderPass, _, err = i.Loader.CreateRenderPass(i.Device, nil, renderPassOptions)
 	return err
 }
 
@@ -780,14 +780,14 @@ func bytesToBytecode(b []byte) []uint32 {
 }
 
 func (i *SampleInfo) InitShaders(vertShaderBytes []byte, fragShaderBytes []byte) error {
-	vertShaderModule, _, err := i.Loader.CreateShaderModule(i.Device, &core.ShaderModuleOptions{
+	vertShaderModule, _, err := i.Loader.CreateShaderModule(i.Device, nil, &core.ShaderModuleOptions{
 		SpirVByteCode: bytesToBytecode(vertShaderBytes),
 	})
 	if err != nil {
 		return err
 	}
 
-	fragShaderModule, _, err := i.Loader.CreateShaderModule(i.Device, &core.ShaderModuleOptions{
+	fragShaderModule, _, err := i.Loader.CreateShaderModule(i.Device, nil, &core.ShaderModuleOptions{
 		SpirVByteCode: bytesToBytecode(fragShaderBytes),
 	})
 	if err != nil {
@@ -827,7 +827,7 @@ func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 		framebufferOptions.Attachments[0] = i.Buffers[swapchainInd].View
 
 		var err error
-		frameBuffer, _, err := i.Loader.CreateFrameBuffer(i.Device, framebufferOptions)
+		frameBuffer, _, err := i.Loader.CreateFrameBuffer(i.Device, nil, framebufferOptions)
 		if err != nil {
 			return err
 		}
@@ -855,7 +855,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 		return err
 	}
 
-	i.VertexBuffer.Mem, _, err = i.Device.AllocateMemory(&core.DeviceMemoryOptions{
+	i.VertexBuffer.Mem, _, err = i.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -933,7 +933,7 @@ func (i *SampleInfo) InitDescriptorPool(useTexture bool) error {
 	}
 
 	var err error
-	i.DescPool, _, err = i.Loader.CreateDescriptorPool(i.Device, &core.DescriptorPoolOptions{
+	i.DescPool, _, err = i.Loader.CreateDescriptorPool(i.Device, nil, &core.DescriptorPoolOptions{
 		MaxSets:   1,
 		PoolSizes: poolSizes,
 	})
@@ -977,7 +977,7 @@ func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
 
 func (i *SampleInfo) InitPipelineCache() error {
 	var err error
-	i.PipelineCache, _, err = i.Loader.CreatePipelineCache(i.Device, &core.PipelineCacheOptions{})
+	i.PipelineCache, _, err = i.Loader.CreatePipelineCache(i.Device, nil, &core.PipelineCacheOptions{})
 	return err
 }
 
@@ -1073,7 +1073,7 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 		pipelineOptions.VertexInput.VertexAttributeDescriptions = i.VertexAttributes
 	}
 
-	pipelines, _, err := i.Loader.CreateGraphicsPipelines(i.Device, i.PipelineCache,
+	pipelines, _, err := i.Loader.CreateGraphicsPipelines(i.Device, i.PipelineCache, nil,
 		[]*core.GraphicsPipelineOptions{
 			pipelineOptions,
 		})
@@ -1084,7 +1084,7 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 
 func (i *SampleInfo) InitPresentableImage() error {
 	var err error
-	i.ImageAcquiredSemaphore, _, err = i.Loader.CreateSemaphore(i.Device, &core.SemaphoreOptions{})
+	i.ImageAcquiredSemaphore, _, err = i.Loader.CreateSemaphore(i.Device, nil, &core.SemaphoreOptions{})
 	if err != nil {
 		return err
 	}
@@ -1136,7 +1136,7 @@ func (i *SampleInfo) InitScissors() {
 }
 
 func (i *SampleInfo) InitFence() (core.Fence, error) {
-	fence, _, err := i.Loader.CreateFence(i.Device, &core.FenceOptions{})
+	fence, _, err := i.Loader.CreateFence(i.Device, nil, &core.FenceOptions{})
 	return fence, err
 }
 
@@ -1155,7 +1155,7 @@ func (i *SampleInfo) InitPresentInfo() *khr_swapchain.PresentOptions {
 	}
 }
 func (i *SampleInfo) InitSampler() (core.Sampler, error) {
-	sampler, _, err := i.Loader.CreateSampler(i.Device, &core.SamplerOptions{
+	sampler, _, err := i.Loader.CreateSampler(i.Device, nil, &core.SamplerOptions{
 		MagFilter:        common.FilterNearest,
 		MinFilter:        common.FilterNearest,
 		MipmapMode:       common.MipmapNearest,
