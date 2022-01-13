@@ -233,7 +233,7 @@ func main() {
 			break
 		}
 	}
-	cmdFence.Destroy()
+	cmdFence.Destroy(nil)
 
 	pImgMem, _, err := dmem.MapMemory(0, memReq.Size, 0)
 	if err != nil {
@@ -441,10 +441,10 @@ func main() {
 		}
 	}
 
-	imageAcquiredSemaphore.Destroy()
-	drawFence.Destroy()
-	bltSrcImage.Destroy()
-	info.Device.FreeMemory(dmem)
+	imageAcquiredSemaphore.Destroy(nil)
+	drawFence.Destroy(nil)
+	bltSrcImage.Destroy(nil)
+	dmem.Free(nil)
 	info.DestroySwapchain()
 	info.DestroyCommandBuffer()
 	info.DestroyCommandPool()
@@ -452,8 +452,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

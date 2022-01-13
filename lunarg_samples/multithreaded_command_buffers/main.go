@@ -289,7 +289,7 @@ func main() {
 			break
 		}
 	}
-	clearFence.Destroy()
+	clearFence.Destroy(nil)
 
 	/* VULKAN_KEY_START */
 	group, _ := errgroup.WithContext(context.Background())
@@ -386,19 +386,19 @@ func main() {
 	}
 
 	for i := 0; i < 3; i++ {
-		vertexBuffers[i].Buffer.Destroy()
-		info.Device.FreeMemory(vertexBuffers[i].Mem)
+		vertexBuffers[i].Buffer.Destroy(nil)
+		vertexBuffers[i].Mem.Free(nil)
 		commandPools[i].FreeCommandBuffers([]core.CommandBuffer{commandBuffers[i]})
-		commandPools[i].Destroy()
+		commandPools[i].Destroy(nil)
 	}
-	info.ImageAcquiredSemaphore.Destroy()
-	drawFence.Destroy()
+	info.ImageAcquiredSemaphore.Destroy(nil)
+	drawFence.Destroy(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyFramebuffers()
 	info.DestroyShaders()
 	info.DestroyRenderpass()
-	info.PipelineLayout.Destroy()
+	info.PipelineLayout.Destroy(nil)
 	info.DestroySwapchain()
 	info.DestroyCommandBuffer()
 	info.DestroyCommandPool()
@@ -408,8 +408,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

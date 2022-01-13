@@ -422,8 +422,8 @@ func main() {
 
 	/* VULKAN_KEY_END */
 
-	drawFence.Destroy()
-	info.ImageAcquiredSemaphore.Destroy()
+	drawFence.Destroy(nil)
+	info.ImageAcquiredSemaphore.Destroy(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyTextures()
@@ -444,8 +444,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

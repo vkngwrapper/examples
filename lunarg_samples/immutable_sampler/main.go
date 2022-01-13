@@ -355,23 +355,23 @@ func main() {
 		}
 	}
 
-	drawFence.Destroy()
-	info.ImageAcquiredSemaphore.Destroy()
+	drawFence.Destroy(nil)
+	info.ImageAcquiredSemaphore.Destroy(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 
-	immutableSampler.Destroy()
-	info.Textures[0].View.Destroy()
-	info.Textures[0].Image.Destroy()
-	info.Device.FreeMemory(info.Textures[0].ImageMemory)
+	immutableSampler.Destroy(nil)
+	info.Textures[0].View.Destroy(nil)
+	info.Textures[0].Image.Destroy(nil)
+	info.Textures[0].ImageMemory.Free(nil)
 
 	if info.Textures[0].NeedsStaging {
-		info.Textures[0].Buffer.Destroy()
-		info.Device.FreeMemory(info.Textures[0].BufferMemory)
+		info.Textures[0].Buffer.Destroy(nil)
+		info.Textures[0].BufferMemory.Free(nil)
 	}
 
 	// instead of destroy_descriptor_pool(info);
-	descriptorPool.Destroy()
+	descriptorPool.Destroy(nil)
 
 	info.DestroyVertexBuffer()
 	info.DestroyFramebuffers()
@@ -379,8 +379,8 @@ func main() {
 	info.DestroyRenderpass()
 
 	// instead of destroy_descriptor_and_pipeline_layouts(info);
-	descriptorLayout.Destroy()
-	info.PipelineLayout.Destroy()
+	descriptorLayout.Destroy(nil)
+	info.PipelineLayout.Destroy(nil)
 
 	info.DestroyUniformBuffer()
 	info.DestroyDepthBuffer()
@@ -391,8 +391,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

@@ -398,11 +398,11 @@ func main() {
 		}
 	}
 
-	queryResultBuf.Destroy()
-	info.Device.FreeMemory(queryResultMem)
-	imageAcquiredSemaphore.Destroy()
-	queryPool.Destroy()
-	drawFence.Destroy()
+	queryResultBuf.Destroy(nil)
+	queryResultMem.Free(nil)
+	imageAcquiredSemaphore.Destroy(nil)
+	queryPool.Destroy(nil)
+	drawFence.Destroy(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
@@ -422,8 +422,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

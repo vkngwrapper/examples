@@ -1196,50 +1196,50 @@ func (i *SampleInfo) ExecutePresentImage() error {
 }
 
 func (i *SampleInfo) DestroyPipeline() {
-	i.Pipeline.Destroy()
+	i.Pipeline.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyPipelineCache() {
-	i.PipelineCache.Destroy()
+	i.PipelineCache.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyUniformBuffer() {
-	i.UniformData.Buf.Destroy()
-	i.Device.FreeMemory(i.UniformData.Mem)
+	i.UniformData.Buf.Destroy(nil)
+	i.UniformData.Mem.Free(nil)
 }
 
 func (i *SampleInfo) DestroyVertexBuffer() {
-	i.VertexBuffer.Buf.Destroy()
-	i.Device.FreeMemory(i.VertexBuffer.Mem)
+	i.VertexBuffer.Buf.Destroy(nil)
+	i.VertexBuffer.Mem.Free(nil)
 }
 
 func (i *SampleInfo) DestroyFramebuffers() {
 	for ind := 0; ind < i.SwapchainImageCount; ind++ {
-		i.Framebuffer[ind].Destroy()
+		i.Framebuffer[ind].Destroy(nil)
 	}
 }
 
 func (i *SampleInfo) DestroyShaders() {
-	i.ShaderStages[0].Shader.Destroy()
-	i.ShaderStages[1].Shader.Destroy()
+	i.ShaderStages[0].Shader.Destroy(nil)
+	i.ShaderStages[1].Shader.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyRenderpass() {
-	i.RenderPass.Destroy()
+	i.RenderPass.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyDepthBuffer() {
-	i.Depth.View.Destroy()
-	i.Depth.Image.Destroy()
-	i.Device.FreeMemory(i.Depth.Mem)
+	i.Depth.View.Destroy(nil)
+	i.Depth.Image.Destroy(nil)
+	i.Depth.Mem.Free(nil)
 }
 
 func (i *SampleInfo) DestroySwapchain() {
 	for j := 0; j < i.SwapchainImageCount; j++ {
-		i.Buffers[j].View.Destroy()
+		i.Buffers[j].View.Destroy(nil)
 	}
 
-	i.Swapchain.Destroy()
+	i.Swapchain.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyCommandBuffer() {
@@ -1247,7 +1247,7 @@ func (i *SampleInfo) DestroyCommandBuffer() {
 }
 
 func (i *SampleInfo) DestroyCommandPool() {
-	i.CmdPool.Destroy()
+	i.CmdPool.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyDevice() error {
@@ -1256,21 +1256,21 @@ func (i *SampleInfo) DestroyDevice() error {
 		return err
 	}
 
-	i.Device.Destroy()
+	i.Device.Destroy(nil)
 	return nil
 }
 
 func (i *SampleInfo) DestroyInstance() {
-	i.Instance.Destroy()
+	i.Instance.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyDescriptorPool() {
-	i.DescPool.Destroy()
+	i.DescPool.Destroy(nil)
 }
 
 func (i *SampleInfo) DestroyDescriptorAndPipelineLayouts() {
 	for ind := 0; ind < NumDescriptorSets; ind++ {
-		i.DescLayout[ind].Destroy()
+		i.DescLayout[ind].Destroy(nil)
 	}
-	i.PipelineLayout.Destroy()
+	i.PipelineLayout.Destroy(nil)
 }

@@ -359,7 +359,7 @@ func main() {
 		}
 	}
 
-	drawFence.Destroy()
+	drawFence.Destroy(nil)
 
 	err = info.ExecutePresentImage()
 	if err != nil {
@@ -376,10 +376,10 @@ func main() {
 		}
 	}
 
-	info.ImageAcquiredSemaphore.Destroy()
-	texelView.Destroy()
-	texelBuf.Destroy()
-	info.Device.FreeMemory(texelMem)
+	info.ImageAcquiredSemaphore.Destroy(nil)
+	texelView.Destroy(nil)
+	texelBuf.Destroy(nil)
+	texelMem.Free(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
@@ -396,8 +396,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

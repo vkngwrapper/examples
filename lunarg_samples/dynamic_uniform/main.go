@@ -414,8 +414,8 @@ func main() {
 		}
 	}
 
-	drawFence.Destroy()
-	imageAcquiredSemaphore.Destroy()
+	drawFence.Destroy(nil)
+	imageAcquiredSemaphore.Destroy(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
@@ -435,8 +435,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	info.Window.Destroy()
 }

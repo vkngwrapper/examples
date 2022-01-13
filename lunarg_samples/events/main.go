@@ -240,8 +240,8 @@ func main() {
 		}
 	}
 
-	event.Destroy()
-	fence.Destroy()
+	event.Destroy(nil)
+	fence.Destroy(nil)
 	info.DestroyCommandBuffer()
 	info.DestroyCommandPool()
 	err = info.DestroyDevice()

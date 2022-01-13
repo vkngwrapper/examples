@@ -171,7 +171,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		}
 	}
 
-	cmdFence.Destroy()
+	cmdFence.Destroy(nil)
 
 	filename := fmt.Sprintf("%s.png", baseName)
 	subresourceLayout := mappableImage.SubresourceLayout(&common.ImageSubresource{
@@ -222,8 +222,8 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	}
 
 	mappableMemory.UnmapMemory()
-	mappableImage.Destroy()
-	i.Device.FreeMemory(mappableMemory)
+	mappableImage.Destroy(nil)
+	mappableMemory.Free(nil)
 
 	writeFile, err := os.Create(filename)
 	if err != nil {
@@ -387,7 +387,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 		}
 	}
 
-	cmdFence.Destroy()
+	cmdFence.Destroy(nil)
 
 	var dataPtr unsafe.Pointer
 	var data []byte
@@ -527,17 +527,17 @@ func (i *SampleInfo) InitTexture(textureReader io.Reader, extraUsages common.Ima
 
 func (i *SampleInfo) DestroyTextures() {
 	for ind := 0; ind < len(i.Textures); ind++ {
-		i.Textures[ind].Sampler.Destroy()
-		i.Textures[ind].View.Destroy()
-		i.Textures[ind].Image.Destroy()
-		i.Device.FreeMemory(i.Textures[ind].ImageMemory)
+		i.Textures[ind].Sampler.Destroy(nil)
+		i.Textures[ind].View.Destroy(nil)
+		i.Textures[ind].Image.Destroy(nil)
+		i.Textures[ind].ImageMemory.Free(nil)
 
 		if i.Textures[ind].Buffer != nil {
-			i.Textures[ind].Buffer.Destroy()
+			i.Textures[ind].Buffer.Destroy(nil)
 		}
 
 		if i.Textures[ind].BufferMemory != nil {
-			i.Device.FreeMemory(i.Textures[ind].BufferMemory)
+			i.Textures[ind].BufferMemory.Free(nil)
 		}
 	}
 }

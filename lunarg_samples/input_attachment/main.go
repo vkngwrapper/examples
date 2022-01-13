@@ -432,7 +432,7 @@ func main() {
 			break
 		}
 	}
-	drawFence.Destroy()
+	drawFence.Destroy(nil)
 
 	err = info.ExecutePresentImage()
 	if err != nil {
@@ -448,10 +448,10 @@ func main() {
 		}
 	}
 
-	info.ImageAcquiredSemaphore.Destroy()
-	inputAttachmentView.Destroy()
-	inputImage.Destroy()
-	info.Device.FreeMemory(inputMemory)
+	info.ImageAcquiredSemaphore.Destroy(nil)
+	inputAttachmentView.Destroy(nil)
+	inputImage.Destroy(nil)
+	inputMemory.Free(nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
@@ -466,8 +466,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

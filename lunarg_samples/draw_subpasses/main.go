@@ -714,20 +714,20 @@ func main() {
 	}
 
 	for i := 0; i < info.SwapchainImageCount; i++ {
-		stencilFramebuffers[i].Destroy()
+		stencilFramebuffers[i].Destroy(nil)
 	}
 
-	stencilRenderPass.Destroy()
-	blendRenderPass.Destroy()
+	stencilRenderPass.Destroy(nil)
+	blendRenderPass.Destroy(nil)
 
-	blendCubePipe[0].Destroy()
-	blendFullscreenPipe[0].Destroy()
+	blendCubePipe[0].Destroy(nil)
+	blendFullscreenPipe[0].Destroy(nil)
 
-	stencilCubePipe[0].Destroy()
-	stencilFullscreenPipe[0].Destroy()
+	stencilCubePipe[0].Destroy(nil)
+	stencilFullscreenPipe[0].Destroy(nil)
 
-	imageAcquiredSemaphore.Destroy()
-	drawFence.Destroy()
+	imageAcquiredSemaphore.Destroy(nil)
+	drawFence.Destroy(nil)
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
 	info.DestroyVertexBuffer()
@@ -744,8 +744,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy()
-	debugMessenger.Destroy()
+	info.Surface.Destroy(nil)
+	debugMessenger.Destroy(nil)
 	info.DestroyInstance()
 	info.Window.Destroy()
 }
