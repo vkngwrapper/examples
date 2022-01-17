@@ -166,7 +166,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 			return err
 		}
 
-		if res != core.VKTimeout {
+		if res != common.VKTimeout {
 			break
 		}
 	}
@@ -382,7 +382,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 			return nil, err
 		}
 
-		if res != core.VKTimeout {
+		if res != common.VKTimeout {
 			break
 		}
 	}

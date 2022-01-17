@@ -110,7 +110,7 @@ func main() {
 		}
 
 		timeouts++
-		if res != core.VKTimeout {
+		if res != common.VKTimeout {
 			break
 		}
 	}
@@ -161,7 +161,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if res != core.VKTimeout {
+	if res != common.VKTimeout {
 		log.Fatalln("Didn't get expected timeout in WaitForFences, exiting")
 	}
 
@@ -177,7 +177,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != core.VKTimeout {
+		if res != common.VKTimeout {
 			break
 		}
 	}
@@ -209,8 +209,8 @@ func main() {
 	// Look for the event on the CPU. It should be RESET since we haven't sent
 	// the command buffer yet.
 	res, _ = event.Status()
-	if res != core.VKEventReset {
-		log.Fatalf("Unexpected status from event, expected %s, got %s\n", core.VKEventReset, res)
+	if res != common.VKEventReset {
+		log.Fatalf("Unexpected status from event, expected %s, got %s\n", common.VKEventReset, res)
 	}
 
 	// Send the command buffer and loop waiting for the event
@@ -220,7 +220,7 @@ func main() {
 	}
 
 	polls := 0
-	for res != core.VKEventSet {
+	for res != common.VKEventSet {
 		res, err = event.Status()
 		if err != nil {
 			log.Fatalln(err)
@@ -235,7 +235,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != core.VKTimeout {
+		if res != common.VKTimeout {
 			break
 		}
 	}

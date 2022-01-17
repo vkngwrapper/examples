@@ -336,7 +336,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		if res != core.VKTimeout {
+		if res != common.VKTimeout {
 			break
 		}
 	}
