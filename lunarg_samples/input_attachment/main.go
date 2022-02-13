@@ -4,6 +4,7 @@ import (
 	"embed"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/internal"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/veandco/go-sdl2/sdl"
@@ -72,7 +73,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
+	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
 	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
@@ -321,9 +322,9 @@ func main() {
 		info.Framebuffer = append(info.Framebuffer, framebuffer)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
 		MaxSets: 1,
-		PoolSizes: []core.PoolSize{
+		PoolSizes: []internal.PoolSize{
 			{
 				Type:            common.DescriptorInputAttachment,
 				DescriptorCount: 1,

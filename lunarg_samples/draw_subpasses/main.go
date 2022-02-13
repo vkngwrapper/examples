@@ -84,7 +84,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
+	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
 	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)

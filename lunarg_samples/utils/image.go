@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/core1_0"
+	"github.com/CannibalVox/VKng/core/internal"
 	"github.com/cockroachdb/errors"
 	"image"
 	"image/color"
@@ -13,7 +15,7 @@ import (
 	"unsafe"
 )
 
-func (i *SampleInfo) SetImageLayout(image core.Image, aspectMask common.ImageAspectFlags, oldImageLayout common.ImageLayout, newImageLayout common.ImageLayout, sourceStages common.PipelineStages, destStages common.PipelineStages) error {
+func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask common.ImageAspectFlags, oldImageLayout common.ImageLayout, newImageLayout common.ImageLayout, sourceStages common.PipelineStages, destStages common.PipelineStages) error {
 	imageBarrierOptions := &core.ImageMemoryBarrierOptions{
 		OldLayout:           oldImageLayout,
 		NewLayout:           newImageLayout,
@@ -113,7 +115,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		common.LayoutTransferSrcOptimal,
 		mappableImage,
 		common.LayoutTransferDstOptimal,
-		[]core.ImageCopy{
+		[]internal.ImageCopy{
 			{
 				SrcSubresource: common.ImageSubresourceLayers{
 					AspectMask:     common.AspectColor,

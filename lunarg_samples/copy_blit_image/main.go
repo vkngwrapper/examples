@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/internal"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
@@ -80,7 +81,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
+	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
 	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
@@ -340,7 +341,7 @@ func main() {
 	}
 
 	// Do a image copy to part of the dst image - checks should stay small
-	err = info.Cmd.CmdCopyImage(bltSrcImage, common.LayoutTransferSrcOptimal, bltDstImage, common.LayoutTransferDstOptimal, []core.ImageCopy{
+	err = info.Cmd.CmdCopyImage(bltSrcImage, common.LayoutTransferSrcOptimal, bltDstImage, common.LayoutTransferDstOptimal, []internal.ImageCopy{
 		{
 			SrcSubresource: common.ImageSubresourceLayers{
 				AspectMask:     common.AspectColor,

@@ -5,6 +5,7 @@ import (
 	"embed"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/internal"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/veandco/go-sdl2/sdl"
@@ -107,7 +108,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
+	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
 	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
@@ -431,7 +432,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	buffers, _, err := commandPools[i].AllocateCommandBuffers(&core.CommandBufferOptions{
+	buffers, _, err := commandPools[i].AllocateCommandBuffers(&internal.CommandBufferOptions{
 		Level:       common.LevelPrimary,
 		BufferCount: 1,
 	})

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/internal"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
@@ -79,7 +80,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateLoaderFromInstance(info.Instance)
+	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
 	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
@@ -206,8 +207,8 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core.DescriptorPoolOptions{
-		PoolSizes: []core.PoolSize{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
+		PoolSizes: []internal.PoolSize{
 			{
 				Type:            common.DescriptorUniformBuffer,
 				DescriptorCount: 2,
@@ -264,7 +265,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.CmdPool.AllocateCommandBuffers(&core.CommandBufferOptions{
+	secondaryCmds, _, err := info.CmdPool.AllocateCommandBuffers(&internal.CommandBufferOptions{
 		Level:       common.LevelSecondary,
 		BufferCount: 4,
 	})
