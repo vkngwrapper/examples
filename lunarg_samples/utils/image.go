@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/core/internal"
 	"github.com/cockroachdb/errors"
 	"image"
@@ -321,7 +320,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 
 	memReqs := textureObj.Image.MemoryRequirements()
 
-	var requirements core.MemoryPropertyFlags
+	var requirements core.MemoryProperties
 	if !textureObj.NeedsStaging {
 		requirements = core.MemoryHostVisible | core.MemoryHostCoherent
 	}

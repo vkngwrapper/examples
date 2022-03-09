@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/core/core1_0/loader"
 	"github.com/CannibalVox/VKng/core/core1_0/options"
 	"github.com/CannibalVox/VKng/core/iface"
@@ -191,7 +190,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next core.Options) error 
 		VulkanVersion:      common.Vulkan1_0,
 		ExtensionNames:     i.InstanceExtensionNames,
 		LayerNames:         i.InstanceLayerNames,
-		HaveNext: core.HaveNext{
+		common.HaveNext: common.HaveNExt{
 			Next: next,
 		},
 	})
