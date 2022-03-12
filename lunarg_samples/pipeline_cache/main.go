@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/google/uuid"
@@ -317,7 +318,7 @@ func main() {
 	}
 
 	// Feed the initial cache data into cache creation
-	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, nil, &core.PipelineCacheOptions{
+	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, nil, &core1_0.PipelineCacheOptions{
 		InitialData: pipelineData,
 	})
 	if err != nil {

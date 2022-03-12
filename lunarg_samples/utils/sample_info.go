@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/core1_0/loader"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/core/core1_0/options"
 	"github.com/CannibalVox/VKng/core/iface"
 	"github.com/CannibalVox/VKng/extensions/khr_surface"
@@ -30,7 +30,7 @@ type SwapchainBuffer struct {
 }
 
 type SampleInfo struct {
-	Loader           loader.Loader
+	Loader           core.Loader
 	Window           *sdl.Window
 	Surface          khr_surface.Surface
 	Prepared         bool
