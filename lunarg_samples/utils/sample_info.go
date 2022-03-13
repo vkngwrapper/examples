@@ -314,7 +314,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 func (i *SampleInfo) InitDevice() error {
 	var err error
 	i.Device, _, err = i.Loader.CreateDevice(i.Gpus[0], nil, &core1_0.DeviceOptions{
-		QueueFamilies: []*core1_0.QueueFamilyOptions{
+		QueueFamilies: []core1_0.QueueFamilyOptions{
 			{
 				QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
 				QueuePriorities:  []float32{0.0},
@@ -664,7 +664,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 }
 
 func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
-	layoutBindings := []*core1_0.DescriptorLayoutBinding{
+	layoutBindings := []core1_0.DescriptorLayoutBinding{
 		{
 			Binding:         0,
 			DescriptorType:  core1_0.DescriptorUniformBuffer,
@@ -673,7 +673,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 		},
 	}
 	if useTexture {
-		layoutBindings = append(layoutBindings, &core1_0.DescriptorLayoutBinding{
+		layoutBindings = append(layoutBindings, core1_0.DescriptorLayoutBinding{
 			Binding:         1,
 			DescriptorType:  core1_0.DescriptorCombinedImageSampler,
 			DescriptorCount: 1,
