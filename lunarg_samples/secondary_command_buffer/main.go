@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/internal"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
@@ -121,7 +121,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -141,7 +141,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(true, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -207,14 +207,14 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
-		PoolSizes: []internal.PoolSize{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
+		PoolSizes: []core1_0.PoolSize{
 			{
-				Type:            common.DescriptorUniformBuffer,
+				Type:            core1_0.DescriptorUniformBuffer,
 				DescriptorCount: 2,
 			},
 			{
-				Type:            common.DescriptorCombinedImageSampler,
+				Type:            core1_0.DescriptorCombinedImageSampler,
 				DescriptorCount: 2,
 			},
 		},
@@ -224,29 +224,30 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.DescPool.AllocateDescriptorSets(&core.DescriptorSetOptions{
-		AllocationLayouts: []core.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+		DescriptorPool:    info.DescPool,
+		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	writes := []core.WriteDescriptorSetOptions{
+	writes := []core1_0.WriteDescriptorSetOptions{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
 
-			DescriptorType: common.DescriptorUniformBuffer,
-			BufferInfo:     []core.DescriptorBufferInfo{info.UniformData.BufferInfo},
+			DescriptorType: core1_0.DescriptorUniformBuffer,
+			BufferInfo:     []core1_0.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      1,
 			DstArrayElement: 0,
 
-			DescriptorType: common.DescriptorCombinedImageSampler,
-			ImageInfo:      []core.DescriptorImageInfo{greenTex},
+			DescriptorType: core1_0.DescriptorCombinedImageSampler,
+			ImageInfo:      []core1_0.DescriptorImageInfo{greenTex},
 		},
 	}
 	err = info.Device.UpdateDescriptorSets(writes, nil)
@@ -265,15 +266,16 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.CmdPool.AllocateCommandBuffers(&internal.CommandBufferOptions{
-		Level:       common.LevelSecondary,
+	secondaryCmds, _, err := info.Loader.AllocateCommandBuffers(&core1_0.CommandBufferOptions{
+		CommandPool: info.CmdPool,
+		Level:       core1_0.LevelSecondary,
 		BufferCount: 4,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -286,7 +288,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, common.AspectColor, common.LayoutUndefined, common.LayoutColorAttachmentOptimal, common.PipelineStageTopOfPipe, common.PipelineStageColorAttachmentOutput)
+	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageColorAttachmentOutput)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -304,13 +306,13 @@ func main() {
 
 	// now we record four separate command buffers, one for each quadrant of the
 	// screen
-	inheritanceInfo := &core.CommandBufferInheritanceOptions{
+	inheritanceInfo := &core1_0.CommandBufferInheritanceOptions{
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderPass:  info.RenderPass,
 		SubPass:     0,
 	}
-	secondaryBegin := &core.BeginOptions{
-		Flags:           core.BeginInfoOneTimeSubmit | core.BeginInfoRenderPassContinue,
+	secondaryBegin := &core1_0.BeginOptions{
+		Flags:           core1_0.BeginInfoOneTimeSubmit | core1_0.BeginInfoRenderPassContinue,
 		InheritanceInfo: inheritanceInfo,
 	}
 
@@ -320,7 +322,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		secondaryCmds[i].CmdBindPipeline(common.BindGraphics, info.Pipeline)
+		secondaryCmds[i].CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
 		firstIndex := 0
 		secondIndex := 1
 
@@ -328,8 +330,8 @@ func main() {
 			firstIndex = 1
 			secondIndex = 2
 		}
-		secondaryCmds[i].CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet[firstIndex:secondIndex], nil)
-		secondaryCmds[i].CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+		secondaryCmds[i].CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet[firstIndex:secondIndex], nil)
+		secondaryCmds[i].CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 		viewport.X = 25.0 + 250.0*float32(i%2)
 		viewport.Y = 25.0 + 250.0*float32(i/2)
@@ -346,16 +348,16 @@ func main() {
 	// specifying VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS means this
 	// render pass may
 	// ONLY call vkCmdExecuteCommands
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsSecondaryCommandBuffers, &core.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, &core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
 			Offset: common.Offset2D{0, 0},
 			Extent: common.Extent2D{info.Width, info.Height},
 		},
-		ClearValues: []core.ClearValue{
-			core.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-			core.ClearValueDepthStencil{Depth: 1, Stencil: 0},
+		ClearValues: []common.ClearValue{
+			common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+			common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 		},
 	})
 	if err != nil {
@@ -371,17 +373,17 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
 		{
-			CommandBuffers: []core.CommandBuffer{info.Cmd},
-			WaitSemaphores: []core.Semaphore{imageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{common.PipelineStageColorAttachmentOutput},
+			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
+			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
+			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {
@@ -397,7 +399,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}
@@ -419,7 +421,7 @@ func main() {
 		}
 	}
 
-	info.CmdPool.FreeCommandBuffers(secondaryCmds)
+	info.Loader.FreeCommandBuffers(secondaryCmds)
 
 	/* VULKAN_KEY_END */
 

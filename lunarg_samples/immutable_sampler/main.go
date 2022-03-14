@@ -4,10 +4,10 @@ import (
 	"embed"
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
-	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/internal"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
+	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 	"runtime/debug"
@@ -124,7 +124,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -139,7 +139,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(true, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -190,7 +190,7 @@ func main() {
 	info.Textures = append(info.Textures, textureObj)
 
 	info.TextureData.ImageInfo.ImageView = textureObj.View
-	info.TextureData.ImageInfo.ImageLayout = common.LayoutShaderReadOnlyOptimal
+	info.TextureData.ImageInfo.ImageLayout = core1_0.ImageLayoutShaderReadOnlyOptimal
 
 	// Set up one descriptor sets
 	const descriptorSetCount = 1
@@ -198,23 +198,23 @@ func main() {
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
 	//   binding 1 = combined image and immutable sampler
-	resourceBinding := []*core.DescriptorLayoutBinding{
+	resourceBinding := []core1_0.DescriptorLayoutBinding{
 		{
 			Binding:         0,
-			DescriptorType:  common.DescriptorUniformBuffer,
+			DescriptorType:  core1_0.DescriptorUniformBuffer,
 			DescriptorCount: 1,
-			StageFlags:      common.StageVertex,
+			StageFlags:      core1_0.StageVertex,
 		},
 		{
 			Binding:           1,
-			DescriptorType:    common.DescriptorCombinedImageSampler,
+			DescriptorType:    core1_0.DescriptorCombinedImageSampler,
 			DescriptorCount:   1,
-			StageFlags:        common.StageFragment,
-			ImmutableSamplers: []core.Sampler{immutableSampler},
+			StageFlags:        core1_0.StageFragment,
+			ImmutableSamplers: []core1_0.Sampler{immutableSampler},
 		},
 	}
 
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
 		Bindings: resourceBinding,
 	})
 	if err != nil {
@@ -222,26 +222,26 @@ func main() {
 	}
 
 	// Create pipeline layout
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
-		SetLayouts: []core.DescriptorSetLayout{descriptorLayout},
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
+		SetLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Create a single pool to contain data for our descriptor set
-	poolSizes := []internal.PoolSize{
+	poolSizes := []core1_0.PoolSize{
 		{
-			Type:            common.DescriptorUniformBuffer,
+			Type:            core1_0.DescriptorUniformBuffer,
 			DescriptorCount: 1,
 		},
 		{
-			Type:            common.DescriptorCombinedImageSampler,
+			Type:            core1_0.DescriptorCombinedImageSampler,
 			DescriptorCount: 1,
 		},
 	}
 
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
 		MaxSets:   descriptorSetCount,
 		PoolSizes: poolSizes,
 	})
@@ -250,27 +250,28 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := descriptorPool.AllocateDescriptorSets(&core.DescriptorSetOptions{
-		AllocationLayouts: []core.DescriptorSetLayout{descriptorLayout},
+	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+		DescriptorPool:    descriptorPool,
+		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{
 			DstSet:          descriptorSets[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
-			DescriptorType:  common.DescriptorUniformBuffer,
-			BufferInfo:      []core.DescriptorBufferInfo{info.UniformData.BufferInfo},
+			DescriptorType:  core1_0.DescriptorUniformBuffer,
+			BufferInfo:      []core1_0.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
 		{
 			DstSet:          descriptorSets[0],
 			DstBinding:      1,
 			DstArrayElement: 0,
-			DescriptorType:  common.DescriptorCombinedImageSampler,
-			ImageInfo:       []core.DescriptorImageInfo{info.TextureData.ImageInfo},
+			DescriptorType:  core1_0.DescriptorCombinedImageSampler,
+			ImageInfo:       []core1_0.DescriptorImageInfo{info.TextureData.ImageInfo},
 		},
 	}, nil)
 	if err != nil {
@@ -297,15 +298,15 @@ func main() {
 	rpBegin := info.InitRenderPassBeginInfo()
 	rpBegin.ClearValues = clearValues
 
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, rpBegin)
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, rpBegin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, descriptorSets, nil)
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, descriptorSets, nil)
 
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	info.InitViewports()
 	info.InitScissors()
@@ -321,9 +322,9 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	submitInfo := info.InitSubmitInfo(common.PipelineStageColorAttachmentOutput)
+	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{*submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -337,7 +338,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

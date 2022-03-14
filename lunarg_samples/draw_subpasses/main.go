@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
@@ -125,17 +126,17 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	props := info.Gpus[0].FormatProperties(common.FormatD32SignedFloatS8UnsignedInt)
-	if (props.LinearTilingFeatures&common.FormatFeatureDepthStencilAttachment != 0) ||
-		(props.OptimalTilingFeatures&common.FormatFeatureDepthStencilAttachment != 0) {
-		info.Depth.Format = common.FormatD32SignedFloatS8UnsignedInt
+	props := info.Gpus[0].FormatProperties(core1_0.DataFormatD32SignedFloatS8UnsignedInt)
+	if (props.LinearTilingFeatures&core1_0.FormatFeatureDepthStencilAttachment != 0) ||
+		(props.OptimalTilingFeatures&core1_0.FormatFeatureDepthStencilAttachment != 0) {
+		info.Depth.Format = core1_0.DataFormatD32SignedFloatS8UnsignedInt
 	} else {
-		info.Depth.Format = common.FormatD24UnsignedNormalizedS8UnsignedInt
+		info.Depth.Format = core1_0.DataFormatD24UnsignedNormalizedS8UnsignedInt
 	}
 
 	err = info.InitDepthBuffer()
@@ -180,43 +181,50 @@ func main() {
 	 *  Stenciled rendering: subpass 1 draw to stencil buffer, subpass 2 draw to
 	 *  color buffer with stencil test
 	 */
-	attachments := []core.AttachmentDescription{
+	attachments := []core1_0.AttachmentDescription{
 		{
 			Format:         info.Format,
-			Samples:        common.Samples1,
-			LoadOp:         common.LoadOpClear,
-			StoreOp:        common.StoreOpStore,
-			StencilLoadOp:  common.LoadOpDontCare,
-			StencilStoreOp: common.StoreOpDontCare,
-			InitialLayout:  common.LayoutUndefined,
-			FinalLayout:    common.LayoutColorAttachmentOptimal,
+			Samples:        core1_0.Samples1,
+			LoadOp:         core1_0.LoadOpClear,
+			StoreOp:        core1_0.StoreOpStore,
+			StencilLoadOp:  core1_0.LoadOpDontCare,
+			StencilStoreOp: core1_0.StoreOpDontCare,
+			InitialLayout:  core1_0.ImageLayoutUndefined,
+			FinalLayout:    core1_0.ImageLayoutColorAttachmentOptimal,
 		},
 		{
 			Format:         info.Depth.Format,
-			Samples:        common.Samples1,
-			LoadOp:         common.LoadOpClear,
-			StoreOp:        common.StoreOpStore,
-			StencilLoadOp:  common.LoadOpClear,
-			StencilStoreOp: common.StoreOpStore,
-			InitialLayout:  common.LayoutUndefined,
-			FinalLayout:    common.LayoutDepthStencilAttachmentOptimal,
+			Samples:        core1_0.Samples1,
+			LoadOp:         core1_0.LoadOpClear,
+			StoreOp:        core1_0.StoreOpStore,
+			StencilLoadOp:  core1_0.LoadOpClear,
+			StencilStoreOp: core1_0.StoreOpStore,
+			InitialLayout:  core1_0.ImageLayoutUndefined,
+			FinalLayout:    core1_0.ImageLayoutDepthStencilAttachmentOptimal,
 		},
 	}
 	depthStencilRef := &common.AttachmentReference{
 		AttachmentIndex: 1,
-		Layout:          common.LayoutDepthStencilAttachmentOptimal,
+		Layout:          core1_0.ImageLayoutDepthStencilAttachmentOptimal,
 	}
 	colorRef := common.AttachmentReference{
 		AttachmentIndex: 0,
-		Layout:          common.LayoutColorAttachmentOptimal,
+		Layout:          core1_0.ImageLayoutColorAttachmentOptimal,
+	}
+	unusedRef := common.AttachmentReference{
+		AttachmentIndex: -1,
+		Layout:          core1_0.ImageLayoutUndefined,
 	}
 
-	subpass := core.SubPass{
-		BindPoint:              common.BindGraphics,
+	subpass := core1_0.SubPass{
+		BindPoint:              core1_0.BindGraphics,
 		DepthStencilAttachment: depthStencilRef,
+		ColorAttachments: []common.AttachmentReference{
+			unusedRef,
+		},
 	}
 
-	subpasses := []core.SubPass{}
+	subpasses := []core1_0.SubPass{}
 
 	/* first a depthstencil-only subpass */
 	subpasses = append(subpasses, subpass)
@@ -227,30 +235,30 @@ func main() {
 	subpasses = append(subpasses, subpass)
 
 	/* Set up a dependency between the source and destination subpasses */
-	dependencies := []core.SubPassDependency{
+	dependencies := []core1_0.SubPassDependency{
 		{
 			SrcSubPassIndex: 0,
 			DstSubPassIndex: 1,
 
-			SrcStageMask: common.PipelineStageAllGraphics,
-			DstStageMask: common.PipelineStageAllGraphics,
+			SrcStageMask: core1_0.PipelineStageAllGraphics,
+			DstStageMask: core1_0.PipelineStageAllGraphics,
 
-			SrcAccessMask: common.AccessDepthStencilAttachmentWrite | common.AccessDepthStencilAttachmentRead,
-			DstAccessMask: common.AccessDepthStencilAttachmentWrite | common.AccessDepthStencilAttachmentRead,
+			SrcAccessMask: core1_0.AccessDepthStencilAttachmentWrite | core1_0.AccessDepthStencilAttachmentRead,
+			DstAccessMask: core1_0.AccessDepthStencilAttachmentWrite | core1_0.AccessDepthStencilAttachmentRead,
 		},
 		{
-			SrcSubPassIndex: core.SubpassExternal,
+			SrcSubPassIndex: core1_0.SubpassExternal,
 			DstSubPassIndex: 0,
 
-			SrcStageMask: common.PipelineStageColorAttachmentOutput,
-			DstStageMask: common.PipelineStageColorAttachmentOutput,
+			SrcStageMask: core1_0.PipelineStageColorAttachmentOutput,
+			DstStageMask: core1_0.PipelineStageColorAttachmentOutput,
 
 			SrcAccessMask: 0,
-			DstAccessMask: common.AccessColorAttachmentWrite,
+			DstAccessMask: core1_0.AccessColorAttachmentWrite,
 		},
 	}
 
-	renderPassOptions := &core.RenderPassOptions{
+	renderPassOptions := &core1_0.RenderPassOptions{
 		Attachments:         attachments,
 		SubPasses:           subpasses,
 		SubPassDependencies: dependencies,
@@ -268,23 +276,23 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	dynamicState := &core.DynamicStateOptions{
-		DynamicStates: []core.DynamicState{},
+	dynamicState := &core1_0.DynamicStateOptions{
+		DynamicStates: []common.DynamicState{},
 	}
 
-	vi := &core.VertexInputOptions{
-		VertexBindingDescriptions:   []core.VertexBindingDescription{info.VertexBinding},
+	vi := &core1_0.VertexInputOptions{
+		VertexBindingDescriptions:   []core1_0.VertexBindingDescription{info.VertexBinding},
 		VertexAttributeDescriptions: info.VertexAttributes,
 	}
 
-	ia := &core.InputAssemblyOptions{
-		Topology: common.TopologyTriangleList,
+	ia := &core1_0.InputAssemblyOptions{
+		Topology: core1_0.TopologyTriangleList,
 	}
 
-	rs := &core.RasterizationOptions{
-		PolygonMode:             core.PolygonModeFill,
-		CullMode:                common.CullBack,
-		FrontFace:               common.FrontFaceClockwise,
+	rs := &core1_0.RasterizationOptions{
+		PolygonMode:             core1_0.PolygonModeFill,
+		CullMode:                core1_0.CullBack,
+		FrontFace:               core1_0.FrontFaceClockwise,
 		DepthClamp:              false,
 		RasterizerDiscard:       false,
 		DepthBias:               false,
@@ -294,27 +302,27 @@ func main() {
 		LineWidth:               1,
 	}
 
-	attState := []core.ColorBlendAttachment{
+	attState := []core1_0.ColorBlendAttachment{
 		{
 			WriteMask:    0xf,
 			BlendEnabled: false,
-			AlphaBlendOp: common.BlendOpAdd,
-			ColorBlendOp: common.BlendOpAdd,
-			SrcColor:     common.BlendZero,
-			DstColor:     common.BlendZero,
-			SrcAlpha:     common.BlendZero,
-			DstAlpha:     common.BlendZero,
+			AlphaBlendOp: core1_0.BlendOpAdd,
+			ColorBlendOp: core1_0.BlendOpAdd,
+			SrcColor:     core1_0.BlendZero,
+			DstColor:     core1_0.BlendZero,
+			SrcAlpha:     core1_0.BlendZero,
+			DstAlpha:     core1_0.BlendZero,
 		},
 	}
 
-	cb := &core.ColorBlendOptions{
+	cb := &core1_0.ColorBlendOptions{
 		Attachments:    attState,
 		LogicOpEnabled: false,
-		LogicOp:        common.LogicOpNoop,
+		LogicOp:        core1_0.LogicOpNoop,
 		BlendConstants: [4]float32{1, 1, 1, 1},
 	}
 
-	vp := &core.ViewportOptions{
+	vp := &core1_0.ViewportOptions{
 		Viewports: []common.Viewport{
 			{},
 		},
@@ -322,21 +330,21 @@ func main() {
 			{},
 		},
 	}
-	dynamicState.DynamicStates = append(dynamicState.DynamicStates, core.DynamicStateViewport, core.DynamicStateScissor)
+	dynamicState.DynamicStates = append(dynamicState.DynamicStates, core1_0.DynamicStateViewport, core1_0.DynamicStateScissor)
 
-	ds := &core.DepthStencilOptions{
+	ds := &core1_0.DepthStencilOptions{
 		DepthTestEnable:       true,
 		DepthWriteEnable:      true,
-		DepthCompareOp:        common.CompareLessOrEqual,
+		DepthCompareOp:        core1_0.CompareLessOrEqual,
 		DepthBoundsTestEnable: false,
 		MinDepthBounds:        0,
 		MaxDepthBounds:        0,
 
 		StencilTestEnable: true,
-		BackStencilState: core.StencilOpState{
-			FailOp:      common.StencilReplace,
-			DepthFailOp: common.StencilReplace,
-			PassOp:      common.StencilReplace,
+		BackStencilState: core1_0.StencilOpState{
+			FailOp:      core1_0.StencilReplace,
+			DepthFailOp: core1_0.StencilReplace,
+			PassOp:      core1_0.StencilReplace,
 			CompareMask: 0xff,
 			WriteMask:   0xff,
 			Reference:   0x44,
@@ -344,7 +352,7 @@ func main() {
 	}
 	ds.FrontStencilState = ds.BackStencilState
 
-	ms := &core.MultisampleOptions{
+	ms := &core1_0.MultisampleOptions{
 		RasterizationSamples: utils.NumSamples,
 		SampleShading:        false,
 		MinSampleShading:     0,
@@ -352,7 +360,7 @@ func main() {
 		AlphaToOne:           false,
 	}
 
-	pipelineOptions := &core.GraphicsPipelineOptions{
+	pipelineOptions := core1_0.GraphicsPipelineOptions{
 		Layout:            info.PipelineLayout,
 		BasePipeline:      nil,
 		BasePipelineIndex: 0,
@@ -386,7 +394,7 @@ func main() {
 	/* The first pipeline will render in subpass 0 to fill the stencil */
 	pipelineOptions.SubPass = 0
 
-	stencilCubePipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []*core.GraphicsPipelineOptions{pipelineOptions})
+	stencilCubePipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineOptions{pipelineOptions})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -407,10 +415,10 @@ func main() {
 
 	/* the second pipeline will stencil test but not write, using the same
 	 * reference */
-	ds.BackStencilState.FailOp = common.StencilKeep
-	ds.BackStencilState.DepthFailOp = common.StencilKeep
-	ds.BackStencilState.PassOp = common.StencilKeep
-	ds.BackStencilState.CompareOp = common.CompareEqual
+	ds.BackStencilState.FailOp = core1_0.StencilKeep
+	ds.BackStencilState.DepthFailOp = core1_0.StencilKeep
+	ds.BackStencilState.PassOp = core1_0.StencilKeep
+	ds.BackStencilState.CompareOp = core1_0.CompareEqual
 	ds.FrontStencilState = ds.BackStencilState
 
 	/* don't test depth, only use stencil test */
@@ -418,7 +426,7 @@ func main() {
 
 	/* the second pipeline will be a fullscreen triangle strip, with vertices
 	   generated purely from the vertex shader - no inputs needed */
-	ia.Topology = common.TopologyTriangleStrip
+	ia.Topology = core1_0.TopologyTriangleStrip
 	vi.VertexBindingDescriptions = nil
 	vi.VertexAttributeDescriptions = nil
 
@@ -426,7 +434,7 @@ func main() {
 	pipelineOptions.SubPass = 1
 	pipelineOptions.ColorBlend = cb
 
-	stencilFullscreenPipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []*core.GraphicsPipelineOptions{pipelineOptions})
+	stencilFullscreenPipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineOptions{pipelineOptions})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -434,12 +442,12 @@ func main() {
 	info.DestroyShaders()
 	info.Pipeline = nil
 
-	clearValues := []core.ClearValue{
-		core.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		core.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
+	clearValues := []common.ClearValue{
+		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		common.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -456,7 +464,7 @@ func main() {
 	   screen. Subpass 0 will render a cube, stencil writing but outputting
 	   no color. Subpass 1 will render a fullscreen pass, stencil testing and
 	   outputting color only where the cube filled in stencil */
-	renderPassBegin := &core.RenderPassBeginOptions{
+	renderPassBegin := &core1_0.RenderPassBeginOptions{
 		RenderPass:  stencilRenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -465,11 +473,11 @@ func main() {
 		},
 		ClearValues: clearValues,
 	}
-	info.Cmd.CmdBeginRenderPass(core.ContentsInline, renderPassBegin)
+	info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, renderPassBegin)
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, stencilCubePipe[0])
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, stencilCubePipe[0])
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	viewports := []common.Viewport{
 		{
@@ -495,10 +503,10 @@ func main() {
 	info.Cmd.CmdDraw(36, 1, 0, 0)
 
 	/* Advance to the next subpass */
-	info.Cmd.CmdNextSubpass(core.ContentsInline)
+	info.Cmd.CmdNextSubpass(core1_0.SubpassContentsInline)
 
 	/* Bind the fullscreen pass pipeline */
-	info.Cmd.CmdBindPipeline(common.BindGraphics, stencilFullscreenPipe[0])
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, stencilFullscreenPipe[0])
 
 	info.Cmd.CmdSetViewport(viewports)
 	info.Cmd.CmdSetScissor(scissors)
@@ -514,15 +522,13 @@ func main() {
 
 	/* note that we reuse a lot of the initialisation strutures from the first
 	   render pass, so this represents a 'delta' from that configuration */
-	renderPassOptions.SubPasses[0].ColorAttachments = []common.AttachmentReference{
-		colorRef,
-	}
-	renderPassOptions.Attachments[0].InitialLayout = common.LayoutColorAttachmentOptimal
-	renderPassOptions.Attachments[0].FinalLayout = common.LayoutPresentSrcKHR
-	renderPassOptions.Attachments[1].InitialLayout = common.LayoutDepthStencilAttachmentOptimal
+	renderPassOptions.SubPasses[0].ColorAttachments[0] = colorRef
+	renderPassOptions.Attachments[0].InitialLayout = core1_0.ImageLayoutColorAttachmentOptimal
+	renderPassOptions.Attachments[0].FinalLayout = khr_swapchain.ImageLayoutPresentSrc
+	renderPassOptions.Attachments[1].InitialLayout = core1_0.ImageLayoutDepthStencilAttachmentOptimal
 
-	renderPassOptions.SubPassDependencies[0].SrcAccessMask |= common.AccessColorAttachmentWrite | common.AccessColorAttachmentRead
-	renderPassOptions.SubPassDependencies[0].DstAccessMask |= common.AccessColorAttachmentRead | common.AccessColorAttachmentWrite
+	renderPassOptions.SubPassDependencies[0].SrcAccessMask |= core1_0.AccessColorAttachmentWrite | core1_0.AccessColorAttachmentRead
+	renderPassOptions.SubPassDependencies[0].DstAccessMask |= core1_0.AccessColorAttachmentRead | core1_0.AccessColorAttachmentWrite
 	renderPassOptions.SubPassDependencies = renderPassOptions.SubPassDependencies[0:1]
 
 	blendRenderPass, _, err := info.Loader.CreateRenderPass(info.Device, nil, renderPassOptions)
@@ -547,8 +553,8 @@ func main() {
 	/* Now create the pipelines for the second render pass */
 
 	/* We are rendering the cube again, configure the vertex inputs */
-	ia.Topology = common.TopologyTriangleList
-	vi.VertexBindingDescriptions = []core.VertexBindingDescription{info.VertexBinding}
+	ia.Topology = core1_0.TopologyTriangleList
+	vi.VertexBindingDescriptions = []core1_0.VertexBindingDescription{info.VertexBinding}
 	vi.VertexAttributeDescriptions = info.VertexAttributes
 
 	/* The first pipeline will depth write and depth test */
@@ -563,12 +569,12 @@ func main() {
 	   to determine the blend amount */
 	cb.Attachments[0].WriteMask = 0xf
 	cb.Attachments[0].BlendEnabled = true
-	cb.Attachments[0].AlphaBlendOp = common.BlendOpAdd
-	cb.Attachments[0].ColorBlendOp = common.BlendOpAdd
-	cb.Attachments[0].SrcColor = common.BlendConstantAlpha
-	cb.Attachments[0].DstColor = common.BlendOne
-	cb.Attachments[0].SrcAlpha = common.BlendConstantAlpha
-	cb.Attachments[0].DstAlpha = common.BlendOne
+	cb.Attachments[0].AlphaBlendOp = core1_0.BlendOpAdd
+	cb.Attachments[0].ColorBlendOp = core1_0.BlendOpAdd
+	cb.Attachments[0].SrcColor = core1_0.BlendConstantAlpha
+	cb.Attachments[0].DstColor = core1_0.BlendOne
+	cb.Attachments[0].SrcAlpha = core1_0.BlendConstantAlpha
+	cb.Attachments[0].DstAlpha = core1_0.BlendOne
 	cb.BlendConstants = [4]float32{1, 1, 1, 0.3}
 
 	err = info.InitShaders(vertShaderBytes, fragShaderBytes)
@@ -581,7 +587,7 @@ func main() {
 	 * image */
 	pipelineOptions.SubPass = 0
 
-	blendCubePipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []*core.GraphicsPipelineOptions{
+	blendCubePipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineOptions{
 		pipelineOptions,
 	})
 	if err != nil {
@@ -597,20 +603,20 @@ func main() {
 	pipelineOptions.ShaderStages = info.ShaderStages
 
 	/* the second pipeline will be a fullscreen triangle strip with no inputs */
-	ia.Topology = common.TopologyTriangleStrip
+	ia.Topology = core1_0.TopologyTriangleStrip
 	vi.VertexBindingDescriptions = nil
 	vi.VertexAttributeDescriptions = nil
 
 	/* We'll use the alpha output from the shader */
-	cb.Attachments[0].SrcColor = common.BlendSrcAlpha
-	cb.Attachments[0].DstColor = common.BlendOne
-	cb.Attachments[0].SrcAlpha = common.BlendSrcAlpha
-	cb.Attachments[0].DstAlpha = common.BlendOne
+	cb.Attachments[0].SrcColor = core1_0.BlendSrcAlpha
+	cb.Attachments[0].DstColor = core1_0.BlendOne
+	cb.Attachments[0].SrcAlpha = core1_0.BlendSrcAlpha
+	cb.Attachments[0].DstAlpha = core1_0.BlendOne
 
 	/* This renders in the second subpass */
 	pipelineOptions.SubPass = 1
 
-	blendFullscreenPipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []*core.GraphicsPipelineOptions{pipelineOptions})
+	blendFullscreenPipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineOptions{pipelineOptions})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -626,14 +632,14 @@ func main() {
 	/* Use our framebuffer and render pass */
 	renderPassBegin.Framebuffer = info.Framebuffer[info.CurrentBuffer]
 	renderPassBegin.RenderPass = blendRenderPass
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, renderPassBegin)
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, renderPassBegin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, blendCubePipe[0])
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, blendCubePipe[0])
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.Cmd.CmdSetViewport(viewports)
 	info.Cmd.CmdSetScissor(scissors)
 
@@ -641,9 +647,9 @@ func main() {
 	info.Cmd.CmdDraw(36, 1, 0, 0)
 
 	/* Advance to the next subpass */
-	info.Cmd.CmdNextSubpass(core.ContentsInline)
+	info.Cmd.CmdNextSubpass(core1_0.SubpassContentsInline)
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, blendFullscreenPipe[0])
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, blendFullscreenPipe[0])
 
 	/* Adjust the viewport to be a square in the centre, just overlapping the
 	 * cube */
@@ -665,17 +671,17 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
 		{
-			WaitSemaphores: []core.Semaphore{imageAcquiredSemaphore},
-			CommandBuffers: []core.CommandBuffer{info.Cmd},
-			WaitDstStages:  []common.PipelineStages{common.PipelineStageColorAttachmentOutput},
+			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
+			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
+			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {
@@ -686,12 +692,12 @@ func main() {
 
 	/* Make sure command buffer is finished before presenting */
 	for {
-		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core.Fence{drawFence})
+		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core1_0.Fence{drawFence})
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

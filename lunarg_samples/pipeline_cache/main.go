@@ -10,6 +10,7 @@ import (
 	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
+	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/google/uuid"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
@@ -130,7 +131,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -159,7 +160,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(true, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -343,14 +344,14 @@ func main() {
 	clearValues := info.InitClearColorAndDepth()
 	rpBegin := info.InitRenderPassBeginInfo()
 	rpBegin.ClearValues = clearValues
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, rpBegin)
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, rpBegin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
 	info.Cmd.CmdDraw(36, 1, 0, 0)
@@ -364,10 +365,10 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	submitInfo := info.InitSubmitInfo(common.PipelineStageColorAttachmentOutput)
+	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{*submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -382,7 +383,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

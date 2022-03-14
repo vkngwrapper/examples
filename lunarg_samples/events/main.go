@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"log"
 )
@@ -85,15 +86,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	fence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	submitInfo := &core.SubmitOptions{
-		CommandBuffers: []core.CommandBuffer{info.Cmd},
+	submitInfo := core1_0.SubmitOptions{
+		CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 	}
-	_, err = info.GraphicsQueue.SubmitToQueue(fence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{
 		submitInfo,
 	})
 	if err != nil {
@@ -110,7 +111,7 @@ func main() {
 		}
 
 		timeouts++
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}
@@ -125,7 +126,7 @@ func main() {
 	}
 
 	// Now create an event and wait for it on the GPU
-	event, _, err := info.Loader.CreateEvent(info.Device, nil, &core.EventOptions{})
+	event, _, err := info.Loader.CreateEvent(info.Device, nil, &core1_0.EventOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -134,7 +135,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = info.Cmd.CmdWaitEvents([]core.Event{event}, common.PipelineStageHost, common.PipelineStageBottomOfPipe, nil, nil, nil)
+	err = info.Cmd.CmdWaitEvents([]core1_0.Event{event}, core1_0.PipelineStageHost, core1_0.PipelineStageBottomOfPipe, nil, nil, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -150,7 +151,7 @@ func main() {
 	// Note that stepping through this code in the debugger is a bad idea because the
 	// GPU can TDR waiting for the event.  Execute the code from vkQueueSubmit through
 	// vkSetEvent without breakpoints
-	_, err = info.GraphicsQueue.SubmitToQueue(fence, []*core.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -161,7 +162,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if res != common.VKTimeout {
+	if res != core1_0.VKTimeout {
 		log.Fatalln("Didn't get expected timeout in WaitForFences, exiting")
 	}
 
@@ -177,7 +178,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}
@@ -200,7 +201,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Cmd.CmdSetEvent(event, common.PipelineStageBottomOfPipe)
+	info.Cmd.CmdSetEvent(event, core1_0.PipelineStageBottomOfPipe)
 	err = info.ExecuteEndCommandBuffer()
 	if err != nil {
 		log.Fatalln(err)
@@ -209,18 +210,18 @@ func main() {
 	// Look for the event on the CPU. It should be RESET since we haven't sent
 	// the command buffer yet.
 	res, _ = event.Status()
-	if res != common.VKEventReset {
-		log.Fatalf("Unexpected status from event, expected %s, got %s\n", common.VKEventReset, res)
+	if res != core1_0.VKEventReset {
+		log.Fatalf("Unexpected status from event, expected %s, got %s\n", core1_0.VKEventReset, res)
 	}
 
 	// Send the command buffer and loop waiting for the event
-	_, err = info.GraphicsQueue.SubmitToQueue(fence, []*core.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	polls := 0
-	for res != common.VKEventSet {
+	for res != core1_0.VKEventSet {
 		res, err = event.Status()
 		if err != nil {
 			log.Fatalln(err)
@@ -235,7 +236,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

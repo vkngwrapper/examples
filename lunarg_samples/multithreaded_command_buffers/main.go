@@ -5,9 +5,10 @@ import (
 	"embed"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/internal"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
+	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/veandco/go-sdl2/sdl"
 	"golang.org/x/sync/errgroup"
 	"log"
@@ -43,12 +44,12 @@ var triData = []Vertex{
 }
 
 type vertexData struct {
-	Buffer core.Buffer
-	Mem    core.DeviceMemory
+	Buffer core1_0.Buffer
+	Mem    core1_0.DeviceMemory
 }
 
-var commandPools [3]core.CommandPool
-var commandBuffers [3]core.CommandBuffer
+var commandPools [3]core1_0.CommandPool
+var commandBuffers [3]core1_0.CommandBuffer
 var vertexBuffers [3]vertexData
 
 /*
@@ -149,12 +150,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferDst)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferDst)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -167,18 +168,18 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, common.AspectColor, common.LayoutUndefined, common.LayoutColorAttachmentOptimal, common.PipelineStageTopOfPipe, common.PipelineStageColorAttachmentOutput)
+	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageColorAttachmentOutput)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{})
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Can't clear in renderpass load because we re-use pipeline
-	err = info.InitRenderPass(false, false, common.LayoutColorAttachmentOptimal, common.LayoutColorAttachmentOptimal)
+	err = info.InitRenderPass(false, false, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.ImageLayoutColorAttachmentOptimal)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -205,23 +206,23 @@ func main() {
 
 	/* The binding and attributes should be the same for all 3 vertex buffers,
 	 * so init here */
-	info.VertexBinding = core.VertexBindingDescription{
+	info.VertexBinding = core1_0.VertexBindingDescription{
 		Binding:   0,
-		InputRate: core.RateVertex,
+		InputRate: core1_0.RateVertex,
 		Stride:    int(unsafe.Sizeof(triData[0])),
 	}
 
-	info.VertexAttributes = []core.VertexAttributeDescription{
+	info.VertexAttributes = []core1_0.VertexAttributeDescription{
 		{
 			Binding:  0,
 			Location: 0,
-			Format:   common.FormatR32G32B32A32SignedFloat,
+			Format:   core1_0.DataFormatR32G32B32A32SignedFloat,
 			Offset:   0,
 		},
 		{
 			Binding:  0,
 			Location: 1,
-			Format:   common.FormatR32G32B32A32SignedFloat,
+			Format:   core1_0.DataFormatR32G32B32A32SignedFloat,
 			Offset:   int(unsafe.Offsetof(triData[0].R)),
 		},
 	}
@@ -237,23 +238,23 @@ func main() {
 	}
 
 	srRange := common.ImageSubresourceRange{
-		AspectMask:     common.AspectColor,
+		AspectMask:     core1_0.AspectColor,
 		BaseMipLevel:   0,
 		LevelCount:     1,
 		BaseArrayLayer: 0,
 		LayerCount:     1,
 	}
 
-	clearColor := core.ClearValueFloat{0.2, 0.2, 0.2, 0.2}
+	clearColor := common.ClearValueFloat{0.2, 0.2, 0.2, 0.2}
 
 	/* We need to do the clear here instead of as a load op since all 3 threads
 	 * share the same pipeline / renderpass */
-	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, common.AspectColor, common.LayoutColorAttachmentOptimal, common.LayoutTransferDstOptimal, common.PipelineStageColorAttachmentOutput, common.PipelineStageTransfer)
+	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageColorAttachmentOutput, core1_0.PipelineStageTransfer)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Cmd.CmdClearColorImage(info.Buffers[info.CurrentBuffer].Image, common.LayoutTransferDstOptimal, clearColor, []common.ImageSubresourceRange{srRange})
-	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, common.AspectColor, common.LayoutTransferDstOptimal, common.LayoutColorAttachmentOptimal, common.PipelineStageTransfer, common.PipelineStageColorAttachmentOutput)
+	info.Cmd.CmdClearColorImage(info.Buffers[info.CurrentBuffer].Image, core1_0.ImageLayoutTransferDstOptimal, clearColor, []common.ImageSubresourceRange{srRange})
+	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutTransferDstOptimal, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.PipelineStageTransfer, core1_0.PipelineStageColorAttachmentOutput)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -269,11 +270,11 @@ func main() {
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(clearFence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(clearFence, []core1_0.SubmitOptions{
 		{
-			WaitSemaphores: []core.Semaphore{info.ImageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{common.PipelineStageColorAttachmentOutput},
-			CommandBuffers: []core.CommandBuffer{info.Cmd},
+			WaitSemaphores: []core1_0.Semaphore{info.ImageAcquiredSemaphore},
+			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
 	})
 	if err != nil {
@@ -286,7 +287,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}
@@ -301,26 +302,26 @@ func main() {
 		})
 	}
 
-	_, err = info.Cmd.Begin(&core.BeginOptions{})
+	_, err = info.Cmd.Begin(&core1_0.BeginOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdPipelineBarrier(common.PipelineStageColorAttachmentOutput,
-		common.PipelineStageBottomOfPipe,
+	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageColorAttachmentOutput,
+		core1_0.PipelineStageBottomOfPipe,
 		0,
 		nil,
 		nil,
-		[]*core.ImageMemoryBarrierOptions{
+		[]core1_0.ImageMemoryBarrierOptions{
 			{
-				SrcAccessMask:       common.AccessColorAttachmentWrite,
-				DstAccessMask:       common.AccessMemoryRead,
-				OldLayout:           common.LayoutColorAttachmentOptimal,
-				NewLayout:           common.LayoutPresentSrcKHR,
+				SrcAccessMask:       core1_0.AccessColorAttachmentWrite,
+				DstAccessMask:       core1_0.AccessMemoryRead,
+				OldLayout:           core1_0.ImageLayoutColorAttachmentOptimal,
+				NewLayout:           khr_swapchain.ImageLayoutPresentSrc,
 				SrcQueueFamilyIndex: -1,
 				DstQueueFamilyIndex: -1,
 				SubresourceRange: common.ImageSubresourceRange{
-					AspectMask:     common.AspectColor,
+					AspectMask:     core1_0.AspectColor,
 					BaseMipLevel:   0,
 					LevelCount:     1,
 					BaseArrayLayer: 0,
@@ -344,15 +345,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
 		{
-			CommandBuffers: []core.CommandBuffer{commandBuffers[0], commandBuffers[1], commandBuffers[2], info.Cmd},
+			CommandBuffers: []core1_0.CommandBuffer{commandBuffers[0], commandBuffers[1], commandBuffers[2], info.Cmd},
 		},
 	})
 	if err != nil {
@@ -366,7 +367,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}
@@ -389,7 +390,7 @@ func main() {
 	for i := 0; i < 3; i++ {
 		vertexBuffers[i].Buffer.Destroy(nil)
 		vertexBuffers[i].Mem.Free(nil)
-		commandPools[i].FreeCommandBuffers([]core.CommandBuffer{commandBuffers[i]})
+		info.Loader.FreeCommandBuffers([]core1_0.CommandBuffer{commandBuffers[i]})
 		commandPools[i].Destroy(nil)
 	}
 	info.ImageAcquiredSemaphore.Destroy(nil)
@@ -425,15 +426,16 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	/* triangle                                                             */
 	var err error
 
-	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, &core.CommandPoolOptions{
+	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, &core1_0.CommandPoolOptions{
 		GraphicsQueueFamily: &info.GraphicsQueueFamilyIndex,
 	})
 	if err != nil {
 		return err
 	}
 
-	buffers, _, err := commandPools[i].AllocateCommandBuffers(&internal.CommandBufferOptions{
-		Level:       common.LevelPrimary,
+	buffers, _, err := info.Loader.AllocateCommandBuffers(&core1_0.CommandBufferOptions{
+		CommandPool: commandPools[i],
+		Level:       core1_0.LevelPrimary,
 		BufferCount: 1,
 	})
 	if err != nil {
@@ -441,10 +443,10 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	}
 	commandBuffers[i] = buffers[0]
 
-	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
+	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
 		BufferSize:  3 * int(unsafe.Sizeof(triData[0])),
-		Usage:       common.UsageVertexBuffer,
-		SharingMode: common.SharingExclusive,
+		Usage:       core1_0.UsageVertexBuffer,
+		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {
 		return err
@@ -452,12 +454,12 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 
 	memReqs := vertexBuffer.MemoryRequirements()
 
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
 	if err != nil {
 		return err
 	}
 
-	vertexMem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
+	vertexMem, _, err := info.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -486,12 +488,12 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	_, err = buffers[0].Begin(&core.BeginOptions{})
+	_, err = buffers[0].Begin(&core1_0.BeginOptions{})
 	if err != nil {
 		return err
 	}
 
-	err = buffers[0].CmdBeginRenderPass(core.ContentsInline, &core.RenderPassBeginOptions{
+	err = buffers[0].CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -503,8 +505,8 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	buffers[0].CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	buffers[0].CmdBindVertexBuffers([]core.Buffer{vertexBuffer}, []int{0})
+	buffers[0].CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	buffers[0].CmdBindVertexBuffers([]core1_0.Buffer{vertexBuffer}, []int{0})
 	buffers[0].CmdSetViewport([]common.Viewport{
 		{
 			X: 0, Y: 0,

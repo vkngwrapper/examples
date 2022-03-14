@@ -6,9 +6,10 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/internal"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
+	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 	"time"
@@ -123,7 +124,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -138,7 +139,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(true, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -170,13 +171,13 @@ func main() {
 
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
-		Bindings: []*core.DescriptorLayoutBinding{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
+		Bindings: []core1_0.DescriptorLayoutBinding{
 			{
-				DescriptorType:  common.DescriptorUniformBuffer,
+				DescriptorType:  core1_0.DescriptorUniformBuffer,
 				DescriptorCount: 1,
 				Binding:         0,
-				StageFlags:      common.StageVertex,
+				StageFlags:      core1_0.StageVertex,
 			},
 		},
 	})
@@ -184,33 +185,33 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// Set up our push constant range, which mirrors the declaration of
-	pushConstantRanges := []common.PushConstantRange{
+	pushConstantRanges := []core1_0.PushConstantRange{
 		{
-			Stages: common.StageFragment,
+			Stages: core1_0.StageFragment,
 			Offset: 0,
 			Size:   8,
 		},
 	}
 
 	// Create pipeline layout with multiple descriptor sets
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
 		PushConstantRanges: pushConstantRanges,
-		SetLayouts:         []core.DescriptorSetLayout{descriptorLayout},
+		SetLayouts:         []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Create a single pool to contain data for our descriptor set
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
 		MaxSets: 1,
-		PoolSizes: []internal.PoolSize{
+		PoolSizes: []core1_0.PoolSize{
 			{
-				Type:            common.DescriptorUniformBuffer,
+				Type:            core1_0.DescriptorUniformBuffer,
 				DescriptorCount: 1,
 			},
 			{
-				Type:            common.DescriptorCombinedImageSampler,
+				Type:            core1_0.DescriptorCombinedImageSampler,
 				DescriptorCount: 1,
 			},
 		},
@@ -220,23 +221,24 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := descriptorPool.AllocateDescriptorSets(&core.DescriptorSetOptions{
-		AllocationLayouts: []core.DescriptorSetLayout{descriptorLayout},
+	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+		DescriptorPool:    descriptorPool,
+		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Populate with info about our uniform buffer for MVP
-	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{
 			DstSet:          descriptorSets[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
 
-			DescriptorType: common.DescriptorUniformBuffer,
+			DescriptorType: core1_0.DescriptorUniformBuffer,
 
-			BufferInfo: []core.DescriptorBufferInfo{
+			BufferInfo: []core1_0.DescriptorBufferInfo{
 				info.UniformData.BufferInfo,
 			},
 		},
@@ -260,7 +262,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdPushConstants(info.PipelineLayout, common.StageFragment, 0, pushWriter.Bytes())
+	info.Cmd.CmdPushConstants(info.PipelineLayout, core1_0.StageFragment, 0, pushWriter.Bytes())
 
 	/* VULKAN_KEY_END */
 
@@ -283,14 +285,14 @@ func main() {
 	rpBegin := info.InitRenderPassBeginInfo()
 	rpBegin.ClearValues = clearValues
 
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, rpBegin)
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, rpBegin)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, descriptorSets, nil)
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, descriptorSets, nil)
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
 	info.Cmd.CmdDraw(36, 1, 0, 0)
@@ -305,21 +307,21 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	submitInfo := info.InitSubmitInfo(common.PipelineStageColorAttachmentOutput)
+	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{*submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	presentInfo := info.InitPresentInfo()
 	for {
-		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core.Fence{drawFence})
+		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core1_0.Fence{drawFence})
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

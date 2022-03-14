@@ -6,7 +6,7 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/internal"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
@@ -132,7 +132,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -142,7 +142,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(true, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -190,10 +190,10 @@ func main() {
 			^(info.GpuProps.Limits.MinUniformBufferOffsetAlignment - 1)
 	}
 
-	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
-		Usage:       common.UsageUniformBuffer,
+	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
+		Usage:       core1_0.UsageUniformBuffer,
 		BufferSize:  2 * bufSize,
-		SharingMode: common.SharingExclusive,
+		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -201,12 +201,12 @@ func main() {
 
 	memReqs := info.UniformData.Buf.MemoryRequirements()
 
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
+	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -247,37 +247,37 @@ func main() {
 
 	/* Init desciptor and pipeline layouts - descriptor type is
 	 * UNIFORM_BUFFER_DYNAMIC */
-	layoutBindings := []*core.DescriptorLayoutBinding{
+	layoutBindings := []core1_0.DescriptorLayoutBinding{
 		{
 			Binding:         0,
-			DescriptorType:  common.DescriptorUniformBufferDynamic,
+			DescriptorType:  core1_0.DescriptorUniformBufferDynamic,
 			DescriptorCount: 1,
-			StageFlags:      common.StageVertex,
+			StageFlags:      core1_0.StageVertex,
 		},
 	}
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.DescLayout = []core.DescriptorSetLayout{descLayout}
+	info.DescLayout = []core1_0.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
 		MaxSets: 1,
-		PoolSizes: []internal.PoolSize{
+		PoolSizes: []core1_0.PoolSize{
 			{
-				Type:            common.DescriptorUniformBufferDynamic,
+				Type:            core1_0.DescriptorUniformBufferDynamic,
 				DescriptorCount: 1,
 			},
 		},
@@ -286,21 +286,22 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.DescPool.AllocateDescriptorSets(&core.DescriptorSetOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+		DescriptorPool:    info.DescPool,
 		AllocationLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
-			DescriptorType:  common.DescriptorUniformBufferDynamic,
+			DescriptorType:  core1_0.DescriptorUniformBufferDynamic,
 
-			BufferInfo: []core.DescriptorBufferInfo{info.UniformData.BufferInfo},
+			BufferInfo: []core1_0.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
 	}, nil)
 	if err != nil {
@@ -317,12 +318,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	clearValues := []core.ClearValue{
-		core.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		core.ClearValueDepthStencil{Depth: 1, Stencil: 0},
+	clearValues := []common.ClearValue{
+		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -335,7 +336,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, &core.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -348,12 +349,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
 
 	/* The first draw should use the first matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, []int{0})
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, []int{0})
 
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	info.InitViewports()
 	info.InitScissors()
@@ -362,7 +363,7 @@ func main() {
 
 	/* The second draw should use the
 	   second matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, []int{bufSize})
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, []int{bufSize})
 	info.Cmd.CmdDraw(36, 1, 0, 0)
 
 	info.Cmd.CmdEndRenderPass()
@@ -370,17 +371,17 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
 		{
-			WaitSemaphores: []core.Semaphore{imageAcquiredSemaphore},
-			CommandBuffers: []core.CommandBuffer{info.Cmd},
-			WaitDstStages:  []common.PipelineStages{common.PipelineStageColorAttachmentOutput},
+			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
+			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
+			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {
@@ -389,12 +390,12 @@ func main() {
 
 	/* Now present the image in the window */
 	for {
-		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core.Fence{drawFence})
+		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core1_0.Fence{drawFence})
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

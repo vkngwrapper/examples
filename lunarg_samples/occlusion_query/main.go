@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
@@ -132,7 +133,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -152,7 +153,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(true, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(true, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -204,12 +205,12 @@ func main() {
 
 	/* VULKAN_KEY_START */
 
-	clearValues := []core.ClearValue{
-		core.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		core.ClearValueDepthStencil{Depth: 1, Stencil: 0},
+	clearValues := []common.ClearValue{
+		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -221,10 +222,10 @@ func main() {
 	}
 
 	/* Allocate a uniform buffer that will take query results. */
-	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
+	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
 		BufferSize:  4 * int(unsafe.Sizeof(uint64(0))),
-		Usage:       common.UsageUniformBuffer | common.UsageTransferDst,
-		SharingMode: common.SharingExclusive,
+		Usage:       core1_0.UsageUniformBuffer | core1_0.UsageTransferDst,
+		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -232,12 +233,12 @@ func main() {
 
 	memReqs := queryResultBuf.MemoryRequirements()
 
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	queryResultMem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
+	queryResultMem, _, err := info.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -250,8 +251,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, &core.QueryPoolOptions{
-		QueryType:  common.QueryTypeOcclusion,
+	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, &core1_0.QueryPoolOptions{
+		QueryType:  core1_0.QueryTypeOcclusion,
 		QueryCount: 2,
 	})
 	if err != nil {
@@ -260,7 +261,7 @@ func main() {
 
 	info.Cmd.CmdResetQueryPool(queryPool, 0, 2)
 
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, &core.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -273,10 +274,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
 
-	info.Cmd.CmdBindVertexBuffers([]core.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	info.Cmd.CmdSetViewport([]common.Viewport{
 		{
@@ -303,24 +304,24 @@ func main() {
 	info.Cmd.CmdEndRenderPass()
 
 	info.Cmd.CmdEndQuery(queryPool, 1)
-	info.Cmd.CmdCopyQueryPoolResults(queryPool, 0, 2, queryResultBuf, 0, int(unsafe.Sizeof(uint64(0))), common.QueryResult64Bit|common.QueryResultWait)
+	info.Cmd.CmdCopyQueryPoolResults(queryPool, 0, 2, queryResultBuf, 0, int(unsafe.Sizeof(uint64(0))), core1_0.QueryResult64Bit|core1_0.QueryResultWait)
 
 	_, err = info.Cmd.End()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []*core.SubmitOptions{
+	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
 		{
-			WaitSemaphores: []core.Semaphore{imageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{common.PipelineStageColorAttachmentOutput},
-			CommandBuffers: []core.CommandBuffer{info.Cmd},
+			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
+			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
 	})
 	if err != nil {
@@ -332,7 +333,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	resultData, _, err := queryPool.PopulateResults(0, 2, 32, 8, common.QueryResult64Bit|common.QueryResultWait)
+	resultData, _, err := queryPool.PopulateResults(0, 2, 32, 8, core1_0.QueryResult64Bit|core1_0.QueryResultWait)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -370,7 +371,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}

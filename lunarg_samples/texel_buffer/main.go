@@ -6,9 +6,10 @@ import (
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/core1_0/loader"
+	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
+	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
 	"runtime/debug"
@@ -49,7 +50,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = loader.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -97,8 +98,8 @@ func main() {
 		log.Fatalln("maxTexelBufferElements too small")
 	}
 
-	props := info.Gpus[0].FormatProperties(common.FormatR32SignedFloat)
-	if (props.BufferFeatures & common.FormatFeatureUniformTexelBuffer) == 0 {
+	props := info.Gpus[0].FormatProperties(core1_0.DataFormatR32SignedFloat)
+	if (props.BufferFeatures & core1_0.FormatFeatureUniformTexelBuffer) == 0 {
 		log.Fatalln("R32_SFLOAT format unsupported for texel buffer")
 	}
 
@@ -132,7 +133,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.InitSwapchain(common.ImageUsageColorAttachment | common.ImageUsageTransferSrc)
+	err = info.InitSwapchain(core1_0.ImageUsageColorAttachment | core1_0.ImageUsageTransferSrc)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -142,10 +143,10 @@ func main() {
 		log.Fatalln("unsized texels")
 	}
 
-	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, &core.BufferOptions{
-		Usage:       common.UsageUniformTexelBuffer,
+	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
+		Usage:       core1_0.UsageUniformTexelBuffer,
 		BufferSize:  texelSize,
-		SharingMode: common.SharingExclusive,
+		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -153,12 +154,12 @@ func main() {
 
 	memReqs := texelBuf.MemoryRequirements()
 
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core.MemoryHostVisible|core.MemoryHostCoherent)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	texelMem, _, err := info.Device.AllocateMemory(nil, &core.DeviceMemoryOptions{
+	texelMem, _, err := info.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -186,9 +187,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	texelView, _, err := info.Loader.CreateBufferView(info.Device, nil, &core.BufferViewOptions{
+	texelView, _, err := info.Loader.CreateBufferView(info.Device, nil, &core1_0.BufferViewOptions{
 		Buffer: texelBuf,
-		Format: common.FormatR32SignedFloat,
+		Format: core1_0.DataFormatR32SignedFloat,
 		Offset: 0,
 		Range:  texelSize,
 	})
@@ -198,13 +199,13 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core.DescriptorSetLayoutOptions{
-		Bindings: []*core.DescriptorLayoutBinding{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
+		Bindings: []core1_0.DescriptorLayoutBinding{
 			{
 				Binding:         0,
-				DescriptorType:  common.DescriptorUniformTexelBuffer,
+				DescriptorType:  core1_0.DescriptorUniformTexelBuffer,
 				DescriptorCount: 1,
-				StageFlags:      common.StageVertex,
+				StageFlags:      core1_0.StageVertex,
 			},
 		},
 	})
@@ -214,14 +215,14 @@ func main() {
 	info.DescLayout = append(info.DescLayout, descLayout)
 
 	/* Now use the descriptor layout to create a pipeline layout */
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.InitRenderPass(false, true, common.LayoutPresentSrcKHR, common.LayoutUndefined)
+	err = info.InitRenderPass(false, true, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutUndefined)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -246,11 +247,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &internal.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
 		MaxSets: 1,
-		PoolSizes: []internal.PoolSize{
+		PoolSizes: []core1_0.PoolSize{
 			{
-				Type:            common.DescriptorUniformTexelBuffer,
+				Type:            core1_0.DescriptorUniformTexelBuffer,
 				DescriptorCount: 1,
 			},
 		},
@@ -260,21 +261,22 @@ func main() {
 	}
 
 	/* Allocate descriptor set with UNIFORM_BUFFER_DYNAMIC */
-	info.DescSet, _, err = info.DescPool.AllocateDescriptorSets(&core.DescriptorSetOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+		DescriptorPool:    info.DescPool,
 		AllocationLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
 
-			DescriptorType:  common.DescriptorUniformTexelBuffer,
-			TexelBufferView: []core.BufferView{texelView},
+			DescriptorType:  core1_0.DescriptorUniformTexelBuffer,
+			TexelBufferView: []core1_0.BufferView{texelView},
 		},
 	}, nil)
 	if err != nil {
@@ -293,7 +295,7 @@ func main() {
 
 	/* VULKAN_KEY_START */
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -309,23 +311,23 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core.ContentsInline, &core.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
 			Offset: common.Offset2D{0, 0},
 			Extent: common.Extent2D{info.Width, info.Height},
 		},
-		ClearValues: []core.ClearValue{
-			core.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		ClearValues: []common.ClearValue{
+			common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
 		},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(common.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(common.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
 
 	info.InitViewports()
 	info.InitScissors()
@@ -339,12 +341,12 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.ExecuteQueueCmdBuf([]core.CommandBuffer{info.Cmd}, drawFence)
+	err = info.ExecuteQueueCmdBuf([]core1_0.CommandBuffer{info.Cmd}, drawFence)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -355,7 +357,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		if res != common.VKTimeout {
+		if res != core1_0.VKTimeout {
 			break
 		}
 	}
