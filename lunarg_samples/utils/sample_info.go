@@ -238,7 +238,7 @@ func (i *SampleInfo) InitDeviceExtensionProperties(layerProps *LayerProperties) 
 
 func (i *SampleInfo) InitSwapchainExtension() error {
 	// Construct the surface
-	surfaceLoader := khr_surface_sdl2.CreateLoaderFromInstance(i.Instance)
+	surfaceLoader := khr_surface_sdl2.CreateExtensionFromInstance(i.Instance)
 
 	var err error
 	i.Surface, _, err = surfaceLoader.CreateSurface(i.Instance, i.Window)
