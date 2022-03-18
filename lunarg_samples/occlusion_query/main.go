@@ -333,12 +333,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	resultData, _, err := queryPool.PopulateResults(0, 2, 32, 8, core1_0.QueryResult64Bit|core1_0.QueryResultWait)
+	resultsData := make([]byte, 32)
+	_, err = queryPool.PopulateResults(0, 2, resultsData, 8, core1_0.QueryResult64Bit|core1_0.QueryResultWait)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	resultReader := bytes.NewBuffer(resultData)
+	resultReader := bytes.NewBuffer(resultsData)
 	samplesPassed := []uint64{0, 0, 0, 0}
 	err = binary.Read(resultReader, common.ByteOrder, samplesPassed)
 	if err != nil {
@@ -381,7 +382,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	_, _, err = info.Swapchain.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

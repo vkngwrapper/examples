@@ -404,7 +404,7 @@ func main() {
 		}
 	}
 
-	_, _, err = info.Swapchain.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

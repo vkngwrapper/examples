@@ -58,6 +58,7 @@ type SampleInfo struct {
 	Format        common.DataFormat
 
 	SwapchainImageCount    int
+	SwapchainExtension     khr_swapchain.Extension
 	Swapchain              khr_swapchain.Swapchain
 	Buffers                []SwapchainBuffer
 	ImageAcquiredSemaphore core1_0.Semaphore
@@ -416,12 +417,12 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 	}
 
 	// Find a supported composite alpha mode - one of these is guaranteed to be set
-	compositeAlpha := khr_surface.AlphaModeOpaque
+	compositeAlpha := khr_surface.CompositeAlphaModeOpaque
 	compositeAlphaFlags := [4]khr_surface.CompositeAlphaModes{
-		khr_surface.AlphaModeOpaque,
-		khr_surface.AlphaModePreMultiplied,
-		khr_surface.AlphaModePostMultiplied,
-		khr_surface.AlphaModeInherit,
+		khr_surface.CompositeAlphaModeOpaque,
+		khr_surface.CompositeAlphaModePreMultiplied,
+		khr_surface.CompositeAlphaModePostMultiplied,
+		khr_surface.CompositeAlphaModeInherit,
 	}
 
 	for i := 0; i < len(compositeAlphaFlags); i++ {
@@ -431,7 +432,7 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 		}
 	}
 
-	swapchainExtension := khr_swapchain.CreateExtensionFromDevice(i.Device)
+	i.SwapchainExtension = khr_swapchain.CreateExtensionFromDevice(i.Device)
 	swapchainOptions := &khr_swapchain.CreationOptions{
 		Surface:          i.Surface,
 		MinImageCount:    desiredNumberOfSwapChainImages,
@@ -459,7 +460,7 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 		}
 	}
 
-	i.Swapchain, _, err = swapchainExtension.CreateSwapchain(i.Device, nil, swapchainOptions)
+	i.Swapchain, _, err = i.SwapchainExtension.CreateSwapchain(i.Device, nil, swapchainOptions)
 	if err != nil {
 		return err
 	}
@@ -1191,7 +1192,7 @@ func (i *SampleInfo) ExecuteQueueCmdBuf(cmdBufs []core1_0.CommandBuffer, fence c
 }
 
 func (i *SampleInfo) ExecutePresentImage() error {
-	_, _, err := i.Swapchain.PresentToQueue(i.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err := i.SwapchainExtension.PresentToQueue(i.PresentQueue, &khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{i.Swapchain},
 		ImageIndices: []int{i.CurrentBuffer},
 	})

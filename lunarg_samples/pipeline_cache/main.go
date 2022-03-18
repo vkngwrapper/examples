@@ -388,7 +388,7 @@ func main() {
 		}
 	}
 
-	_, _, err = info.Swapchain.PresentToQueue(info.PresentQueue, present)
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, present)
 	if err != nil {
 		log.Fatalln(err)
 	}
