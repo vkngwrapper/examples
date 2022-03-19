@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackData) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	log.Println()
@@ -72,7 +72,7 @@ func main() {
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
 	debugOptions := &ext_debug_utils.CreationOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeAll,
+		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
 	}
 
