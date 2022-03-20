@@ -81,7 +81,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -210,7 +210,7 @@ func main() {
 		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -222,7 +222,7 @@ func main() {
 	}
 
 	/* Allocate a uniform buffer that will take query results. */
-	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
+	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
 		BufferSize:  4 * int(unsafe.Sizeof(uint64(0))),
 		Usage:       core1_0.UsageUniformBuffer | core1_0.UsageTransferDst,
 		SharingMode: core1_0.SharingExclusive,
@@ -238,7 +238,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryResultMem, _, err := info.Loader.AllocateMemory(info.Device, nil, &core1_0.DeviceMemoryOptions{
+	queryResultMem, _, err := info.Loader.AllocateMemory(info.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -251,7 +251,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, &core1_0.QueryPoolOptions{
+	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, core1_0.QueryPoolOptions{
 		QueryType:  core1_0.QueryTypeOcclusion,
 		QueryCount: 2,
 	})
@@ -261,7 +261,7 @@ func main() {
 
 	info.Cmd.CmdResetQueryPool(queryPool, 0, 2)
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -311,7 +311,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -382,7 +382,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

@@ -56,7 +56,7 @@ func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask common.Image
 }
 
 func (i *SampleInfo) WritePNG(baseName string) error {
-	mappableImage, _, err := i.Loader.CreateImage(i.Device, nil, &core1_0.ImageOptions{
+	mappableImage, _, err := i.Loader.CreateImage(i.Device, nil, core1_0.ImageOptions{
 		ImageType: core1_0.ImageType2D,
 		Format:    i.Format,
 		Extent: common.Extent3D{
@@ -82,7 +82,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	mappableMemory, _, err := i.Loader.AllocateMemory(i.Device, nil, &core1_0.DeviceMemoryOptions{
+	mappableMemory, _, err := i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -95,7 +95,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	_, err = i.Cmd.Begin(&core1_0.BeginOptions{})
+	_, err = i.Cmd.Begin(core1_0.BeginOptions{})
 	if err != nil {
 		return err
 	}
@@ -147,7 +147,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	cmdFence, _, err := i.Loader.CreateFence(i.Device, nil, &core1_0.FenceOptions{})
+	cmdFence, _, err := i.Loader.CreateFence(i.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		return err
 	}
@@ -236,7 +236,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 
 func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	var err error
-	textureObj.Buffer, _, err = i.Loader.CreateBuffer(i.Device, nil, &core1_0.BufferOptions{
+	textureObj.Buffer, _, err = i.Loader.CreateBuffer(i.Device, nil, core1_0.BufferOptions{
 		BufferSize:  textureObj.TexWidth * textureObj.TexHeight * 4,
 		Usage:       core1_0.UsageTransferSrc,
 		SharingMode: core1_0.SharingExclusive,
@@ -255,7 +255,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	}
 
 	/* allocate memory */
-	textureObj.BufferMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, &core1_0.DeviceMemoryOptions{
+	textureObj.BufferMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -295,7 +295,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 		extraUsages |= core1_0.ImageUsageTransferDst
 	}
 
-	imageOptions := &core1_0.ImageOptions{
+	imageOptions := core1_0.ImageOptions{
 		ImageType:   core1_0.ImageType2D,
 		Format:      core1_0.DataFormatR8G8B8A8UnsignedNormalized,
 		Extent:      common.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},
@@ -331,7 +331,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	}
 
 	/* allocate memory */
-	textureObj.ImageMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, &core1_0.DeviceMemoryOptions{
+	textureObj.ImageMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -350,7 +350,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 		return nil, err
 	}
 
-	cmdFence, _, err := i.Loader.CreateFence(i.Device, nil, &core1_0.FenceOptions{})
+	cmdFence, _, err := i.Loader.CreateFence(i.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -432,7 +432,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	if err != nil {
 		return nil, err
 	}
-	_, err = i.Cmd.Begin(&core1_0.BeginOptions{})
+	_, err = i.Cmd.Begin(core1_0.BeginOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -482,7 +482,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	}
 
 	/* create image view */
-	textureObj.View, _, err = i.Loader.CreateImageView(i.Device, nil, &core1_0.ImageViewOptions{
+	textureObj.View, _, err = i.Loader.CreateImageView(i.Device, nil, core1_0.ImageViewOptions{
 		Image:    textureObj.Image,
 		ViewType: core1_0.ViewType2D,
 		Format:   core1_0.DataFormatR8G8B8A8UnsignedNormalized,

@@ -79,7 +79,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -319,7 +319,7 @@ func main() {
 	}
 
 	// Feed the initial cache data into cache creation
-	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, nil, &core1_0.PipelineCacheOptions{
+	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, nil, core1_0.PipelineCacheOptions{
 		InitialData: pipelineData,
 	})
 	if err != nil {

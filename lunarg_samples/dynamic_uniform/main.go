@@ -76,7 +76,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -190,7 +190,7 @@ func main() {
 			^(info.GpuProps.Limits.MinUniformBufferOffsetAlignment - 1)
 	}
 
-	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
+	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
 		Usage:       core1_0.UsageUniformBuffer,
 		BufferSize:  2 * bufSize,
 		SharingMode: core1_0.SharingExclusive,
@@ -206,7 +206,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.UniformData.Mem, _, err = info.Loader.AllocateMemory(info.Device, nil, &core1_0.DeviceMemoryOptions{
+	info.UniformData.Mem, _, err = info.Loader.AllocateMemory(info.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -258,7 +258,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutOptions{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
@@ -266,14 +266,14 @@ func main() {
 	}
 	info.DescLayout = []core1_0.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
 		MaxSets: 1,
 		PoolSizes: []core1_0.PoolSize{
 			{
@@ -286,7 +286,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: info.DescLayout,
 	})
@@ -323,7 +323,7 @@ func main() {
 		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -336,7 +336,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -371,7 +371,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -399,7 +399,7 @@ func main() {
 			break
 		}
 	}
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

@@ -72,7 +72,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -171,7 +171,7 @@ func main() {
 
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutOptions{
 		Bindings: []core1_0.DescriptorLayoutBinding{
 			{
 				DescriptorType:  core1_0.DescriptorUniformBuffer,
@@ -194,7 +194,7 @@ func main() {
 	}
 
 	// Create pipeline layout with multiple descriptor sets
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{
 		PushConstantRanges: pushConstantRanges,
 		SetLayouts:         []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
@@ -203,7 +203,7 @@ func main() {
 	}
 
 	// Create a single pool to contain data for our descriptor set
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
 		MaxSets: 1,
 		PoolSizes: []core1_0.PoolSize{
 			{
@@ -221,7 +221,7 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    descriptorPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})

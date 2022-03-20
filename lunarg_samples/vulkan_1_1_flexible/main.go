@@ -51,7 +51,7 @@ func main() {
 			log.Fatalln("loader v1.1 not loaded")
 		}
 
-		instance, _, err := info.Loader.CreateInstance(nil, &core1_0.InstanceOptions{
+		instance, _, err := info.Loader.CreateInstance(nil, core1_0.InstanceOptions{
 			ApplicationName:    "vulkan_1_1_sampler",
 			ApplicationVersion: common.CreateVersion(1, 0, 0),
 			EngineName:         "vulkan_1_1_sampler",

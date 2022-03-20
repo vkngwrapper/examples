@@ -70,7 +70,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -142,7 +142,7 @@ func main() {
 		log.Fatalln("FOrmat cannot be used as transfer source")
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -162,7 +162,7 @@ func main() {
 	}
 
 	// Create an image, map it, and write some values to the image
-	bltSrcImage, _, err := info.Loader.CreateImage(info.Device, nil, &core1_0.ImageOptions{
+	bltSrcImage, _, err := info.Loader.CreateImage(info.Device, nil, core1_0.ImageOptions{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
 		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
@@ -184,7 +184,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	dmem, _, err := info.Loader.AllocateMemory(info.Device, nil, &core1_0.DeviceMemoryOptions{
+	dmem, _, err := info.Loader.AllocateMemory(info.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReq.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -391,7 +391,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -424,7 +424,7 @@ func main() {
 			break
 		}
 	}
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

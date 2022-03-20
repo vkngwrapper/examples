@@ -86,7 +86,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
+	fence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -126,7 +126,7 @@ func main() {
 	}
 
 	// Now create an event and wait for it on the GPU
-	event, _, err := info.Loader.CreateEvent(info.Device, nil, &core1_0.EventOptions{})
+	event, _, err := info.Loader.CreateEvent(info.Device, nil, core1_0.EventOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

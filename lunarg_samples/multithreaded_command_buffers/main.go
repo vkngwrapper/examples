@@ -98,7 +98,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -155,7 +155,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -173,7 +173,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{})
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -302,7 +302,7 @@ func main() {
 		})
 	}
 
-	_, err = info.Cmd.Begin(&core1_0.BeginOptions{})
+	_, err = info.Cmd.Begin(core1_0.BeginOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -345,7 +345,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -426,14 +426,14 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	/* triangle                                                             */
 	var err error
 
-	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, &core1_0.CommandPoolOptions{
+	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, core1_0.CommandPoolOptions{
 		GraphicsQueueFamily: &info.GraphicsQueueFamilyIndex,
 	})
 	if err != nil {
 		return err
 	}
 
-	buffers, _, err := info.Loader.AllocateCommandBuffers(&core1_0.CommandBufferOptions{
+	buffers, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
 		CommandPool: commandPools[i],
 		Level:       core1_0.LevelPrimary,
 		BufferCount: 1,
@@ -443,7 +443,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	}
 	commandBuffers[i] = buffers[0]
 
-	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, &core1_0.BufferOptions{
+	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
 		BufferSize:  3 * int(unsafe.Sizeof(triData[0])),
 		Usage:       core1_0.UsageVertexBuffer,
 		SharingMode: core1_0.SharingExclusive,
@@ -459,7 +459,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	vertexMem, _, err := info.Loader.AllocateMemory(info.Device, nil, &core1_0.DeviceMemoryOptions{
+	vertexMem, _, err := info.Loader.AllocateMemory(info.Device, nil, core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -488,12 +488,12 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	_, err = buffers[0].Begin(&core1_0.BeginOptions{})
+	_, err = buffers[0].Begin(core1_0.BeginOptions{})
 	if err != nil {
 		return err
 	}
 
-	err = buffers[0].CmdBeginRenderPass(core1_0.SubpassContentsInline, &core1_0.RenderPassBeginOptions{
+	err = buffers[0].CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{

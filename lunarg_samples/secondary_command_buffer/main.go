@@ -69,7 +69,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -207,7 +207,7 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
 		PoolSizes: []core1_0.PoolSize{
 			{
 				Type:            core1_0.DescriptorUniformBuffer,
@@ -224,7 +224,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
@@ -266,7 +266,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.Loader.AllocateCommandBuffers(&core1_0.CommandBufferOptions{
+	secondaryCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
 		CommandPool: info.CmdPool,
 		Level:       core1_0.LevelSecondary,
 		BufferCount: 4,
@@ -275,7 +275,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, &core1_0.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -311,7 +311,7 @@ func main() {
 		RenderPass:  info.RenderPass,
 		SubPass:     0,
 	}
-	secondaryBegin := &core1_0.BeginOptions{
+	secondaryBegin := core1_0.BeginOptions{
 		Flags:           core1_0.BeginInfoOneTimeSubmit | core1_0.BeginInfoRenderPassContinue,
 		InheritanceInfo: inheritanceInfo,
 	}
@@ -348,7 +348,7 @@ func main() {
 	// specifying VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS means this
 	// render pass may
 	// ONLY call vkCmdExecuteCommands
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, &core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: common.Rect2D{
@@ -373,7 +373,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, &core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -404,7 +404,7 @@ func main() {
 		}
 	}
 
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, &khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

@@ -72,7 +72,7 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := &ext_debug_utils.CreationOptions{
+	debugOptions := ext_debug_utils.CreateOptions{
 		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
 		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
 		Callback:          logDebug,
@@ -214,7 +214,7 @@ func main() {
 		},
 	}
 
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, &core1_0.DescriptorSetLayoutOptions{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutOptions{
 		Bindings: resourceBinding,
 	})
 	if err != nil {
@@ -222,7 +222,7 @@ func main() {
 	}
 
 	// Create pipeline layout
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, &core1_0.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{
 		SetLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
@@ -241,7 +241,7 @@ func main() {
 		},
 	}
 
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, &core1_0.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
 		MaxSets:   descriptorSetCount,
 		PoolSizes: poolSizes,
 	})
@@ -250,7 +250,7 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(&core1_0.DescriptorSetOptions{
+	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    descriptorPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
