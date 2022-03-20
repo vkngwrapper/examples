@@ -67,7 +67,7 @@ func main() {
 			log.Fatalln("instance v1.1 not loaded")
 		}
 
-		physicalDevices, _, err := instance.PhysicalDevices()
+		physicalDevices, _, err := info.Loader.PhysicalDevices(instance)
 		if err != nil {
 			log.Fatalln(err)
 		}

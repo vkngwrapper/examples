@@ -206,7 +206,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
+	info.UniformData.Mem, _, err = info.Loader.AllocateMemory(info.Device, nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})

@@ -184,7 +184,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	dmem, _, err := info.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
+	dmem, _, err := info.Loader.AllocateMemory(info.Device, nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReq.Size,
 		MemoryTypeIndex: memoryIndex,
 	})

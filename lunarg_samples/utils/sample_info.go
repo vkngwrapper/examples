@@ -203,7 +203,7 @@ func (i *SampleInfo) InitDeviceExtensionNames() error {
 
 func (i *SampleInfo) InitEnumerateDevice() error {
 	var err error
-	i.Gpus, _, err = i.Instance.PhysicalDevices()
+	i.Gpus, _, err = i.Loader.PhysicalDevices(i.Instance)
 	if err != nil {
 		return err
 	}
@@ -359,14 +359,14 @@ func (i *SampleInfo) ExecuteEndCommandBuffer() error {
 }
 
 func (i *SampleInfo) InitDeviceQueue() error {
-	i.GraphicsQueue = i.Device.GetQueue(i.GraphicsQueueFamilyIndex, 0)
+	i.GraphicsQueue = i.Loader.GetQueue(i.Device, i.GraphicsQueueFamilyIndex, 0)
 
 	if i.PresentQueueFamilyIndex == i.GraphicsQueueFamilyIndex {
 		i.PresentQueue = i.GraphicsQueue
 		return nil
 	}
 
-	i.PresentQueue = i.Device.GetQueue(i.PresentQueueFamilyIndex, 0)
+	i.PresentQueue = i.Loader.GetQueue(i.Device, i.PresentQueueFamilyIndex, 0)
 	return nil
 }
 
@@ -547,7 +547,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 		return err
 	}
 
-	i.Depth.Mem, _, err = i.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
+	i.Depth.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  imageMemoryReqs.Size,
 		MemoryTypeIndex: typeIndex,
 	})
@@ -624,7 +624,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 		return err
 	}
 
-	i.UniformData.Mem, _, err = i.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
+	i.UniformData.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -858,7 +858,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 		return err
 	}
 
-	i.VertexBuffer.Mem, _, err = i.Device.AllocateMemory(nil, &core1_0.DeviceMemoryOptions{
+	i.VertexBuffer.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, &core1_0.DeviceMemoryOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
