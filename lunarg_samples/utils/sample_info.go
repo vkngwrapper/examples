@@ -212,7 +212,10 @@ func (i *SampleInfo) InitEnumerateDevice() error {
 	i.QueueFamilyCount = len(i.QueueProps)
 
 	i.MemoryProperties = i.Gpus[0].MemoryProperties()
-	i.GpuProps = i.Gpus[0].Properties()
+	i.GpuProps, err = i.Gpus[0].Properties()
+	if err != nil {
+		return err
+	}
 
 	for _, layerProps := range i.InstanceLayerProperties {
 		err = i.InitDeviceExtensionProperties(layerProps)
@@ -542,7 +545,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	}
 
 	imageMemoryReqs := i.Depth.Image.MemoryRequirements()
-	typeIndex, err := i.MemoryTypeFromProperties(imageMemoryReqs.MemoryType, core1_0.MemoryDeviceLocal)
+	typeIndex, err := i.MemoryTypeFromProperties(imageMemoryReqs.MemoryType, core1_0.MemoryPropertyDeviceLocal)
 	if err != nil {
 		return err
 	}
@@ -619,7 +622,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 	}
 
 	memReqs := i.UniformData.Buf.MemoryRequirements()
-	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
+	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		return err
 	}
@@ -853,7 +856,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 	}
 
 	memReqs := i.VertexBuffer.Buf.MemoryRequirements()
-	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
+	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		return err
 	}

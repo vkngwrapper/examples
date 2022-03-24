@@ -179,7 +179,7 @@ func main() {
 	}
 
 	memReq := bltSrcImage.MemoryRequirements()
-	memoryIndex, err := info.MemoryTypeFromProperties(memReq.MemoryType, core1_0.MemoryHostVisible)
+	memoryIndex, err := info.MemoryTypeFromProperties(memReq.MemoryType, core1_0.MemoryPropertyHostVisible)
 	if err != nil {
 		log.Fatalln(err)
 	}

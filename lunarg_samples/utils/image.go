@@ -77,7 +77,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	}
 
 	memReqs := mappableImage.MemoryRequirements()
-	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryHostVisible|core1_0.MemoryHostCoherent)
+	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	memReqs := textureObj.Buffer.MemoryRequirements()
 	textureObj.BufferSize = memReqs.Size
 
-	requirements := core1_0.MemoryHostVisible | core1_0.MemoryHostCoherent
+	requirements := core1_0.MemoryPropertyHostVisible | core1_0.MemoryPropertyHostCoherent
 	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, requirements)
 	if err != nil {
 		return err
@@ -322,7 +322,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 
 	var requirements common.MemoryProperties
 	if !textureObj.NeedsStaging {
-		requirements = core1_0.MemoryHostVisible | core1_0.MemoryHostCoherent
+		requirements = core1_0.MemoryPropertyHostVisible | core1_0.MemoryPropertyHostCoherent
 	}
 
 	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, requirements)
