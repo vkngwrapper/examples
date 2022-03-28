@@ -7,8 +7,8 @@ import (
 	"github.com/CannibalVox/VKng/core/common"
 	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/extensions/khr_surface"
-	"github.com/CannibalVox/VKng/extensions/khr_surface_sdl2"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
+	"github.com/CannibalVox/VKng/extensions/vkng_surface_sdl2"
 	"github.com/cockroachdb/errors"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/veandco/go-sdl2/sdl"
@@ -242,7 +242,7 @@ func (i *SampleInfo) InitDeviceExtensionProperties(layerProps *LayerProperties) 
 
 func (i *SampleInfo) InitSwapchainExtension() error {
 	// Construct the surface
-	surfaceLoader := khr_surface_sdl2.CreateExtensionFromInstance(i.Instance)
+	surfaceLoader := vkng_surface_sdl2.CreateExtensionFromInstance(i.Instance)
 
 	var err error
 	i.Surface, _, err = surfaceLoader.CreateSurface(i.Instance, i.Window)
