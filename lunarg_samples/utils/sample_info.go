@@ -318,10 +318,10 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 func (i *SampleInfo) InitDevice() error {
 	var err error
 	i.Device, _, err = i.Loader.CreateDevice(i.Gpus[0], nil, core1_0.DeviceOptions{
-		QueueFamilies: []core1_0.QueueFamilyOptions{
+		QueueFamilies: []core1_0.DeviceQueueOptions{
 			{
-				QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
-				QueuePriorities:  []float32{0.0},
+				QueueFamilyIndex:       i.GraphicsQueueFamilyIndex,
+				CreatedQueuePriorities: []float32{0.0},
 			},
 		},
 		ExtensionNames: i.DeviceExtensionNames,
