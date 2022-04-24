@@ -613,7 +613,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 
 	var err error
 	i.UniformData.Buf, _, err = i.Loader.CreateBuffer(i.Device, nil, core1_0.BufferOptions{
-		Usage:       core1_0.UsageUniformBuffer,
+		Usage:       core1_0.BufferUsageUniformBuffer,
 		BufferSize:  int(unsafe.Sizeof(i.MVP)),
 		SharingMode: core1_0.SharingExclusive,
 	})
@@ -848,7 +848,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 	var err error
 	i.VertexBuffer.Buf, _, err = i.Loader.CreateBuffer(i.Device, nil, core1_0.BufferOptions{
 		BufferSize:  dataSize,
-		Usage:       core1_0.UsageVertexBuffer,
+		Usage:       core1_0.BufferUsageVertexBuffer,
 		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {

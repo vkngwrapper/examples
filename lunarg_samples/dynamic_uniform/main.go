@@ -191,7 +191,7 @@ func main() {
 	}
 
 	info.UniformData.Buf, _, err = info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
-		Usage:       core1_0.UsageUniformBuffer,
+		Usage:       core1_0.BufferUsageUniformBuffer,
 		BufferSize:  2 * bufSize,
 		SharingMode: core1_0.SharingExclusive,
 	})

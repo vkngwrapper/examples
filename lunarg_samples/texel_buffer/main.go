@@ -144,7 +144,7 @@ func main() {
 	}
 
 	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
-		Usage:       core1_0.UsageUniformTexelBuffer,
+		Usage:       core1_0.BufferUsageUniformTexelBuffer,
 		BufferSize:  texelSize,
 		SharingMode: core1_0.SharingExclusive,
 	})

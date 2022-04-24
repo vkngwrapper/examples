@@ -445,7 +445,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 
 	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
 		BufferSize:  3 * int(unsafe.Sizeof(triData[0])),
-		Usage:       core1_0.UsageVertexBuffer,
+		Usage:       core1_0.BufferUsageVertexBuffer,
 		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {

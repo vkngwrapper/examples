@@ -224,7 +224,7 @@ func main() {
 	/* Allocate a uniform buffer that will take query results. */
 	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
 		BufferSize:  4 * int(unsafe.Sizeof(uint64(0))),
-		Usage:       core1_0.UsageUniformBuffer | core1_0.UsageTransferDst,
+		Usage:       core1_0.BufferUsageUniformBuffer | core1_0.BufferUsageTransferDst,
 		SharingMode: core1_0.SharingExclusive,
 	})
 	if err != nil {
