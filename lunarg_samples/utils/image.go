@@ -82,7 +82,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	mappableMemory, _, err := i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
+	mappableMemory, _, err := i.Loader.AllocateMemory(i.Device, nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -255,7 +255,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	}
 
 	/* allocate memory */
-	textureObj.BufferMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
+	textureObj.BufferMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -331,7 +331,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	}
 
 	/* allocate memory */
-	textureObj.ImageMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
+	textureObj.ImageMemory, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})

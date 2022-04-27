@@ -550,7 +550,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 		return err
 	}
 
-	i.Depth.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
+	i.Depth.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  imageMemoryReqs.Size,
 		MemoryTypeIndex: typeIndex,
 	})
@@ -627,7 +627,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 		return err
 	}
 
-	i.UniformData.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
+	i.UniformData.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -861,7 +861,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dat
 		return err
 	}
 
-	i.VertexBuffer.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.DeviceMemoryOptions{
+	i.VertexBuffer.Mem, _, err = i.Loader.AllocateMemory(i.Device, nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
