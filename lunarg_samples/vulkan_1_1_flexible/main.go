@@ -73,8 +73,8 @@ func main() {
 		}
 
 		for _, device := range physicalDevices {
-			if device.APIVersion().IsAtLeast(desiredVersion) {
-				if device.Core1_1() == nil {
+			if device.DeviceAPIVersion().IsAtLeast(desiredVersion) {
+				if device.Core1_1Instance() == nil {
 					log.Fatalln("physical device v1.1 not loaded")
 				}
 
