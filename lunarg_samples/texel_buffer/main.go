@@ -143,7 +143,7 @@ func main() {
 		log.Fatalln("unsized texels")
 	}
 
-	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
+	texelBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferCreateOptions{
 		Usage:       core1_0.BufferUsageUniformTexelBuffer,
 		BufferSize:  texelSize,
 		SharingMode: core1_0.SharingExclusive,
@@ -187,7 +187,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	texelView, _, err := info.Loader.CreateBufferView(info.Device, nil, core1_0.BufferViewOptions{
+	texelView, _, err := info.Loader.CreateBufferView(info.Device, nil, core1_0.BufferViewCreateOptions{
 		Buffer: texelBuf,
 		Format: core1_0.DataFormatR32SignedFloat,
 		Offset: 0,
@@ -199,7 +199,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutCreateOptions{
 		Bindings: []core1_0.DescriptorLayoutBinding{
 			{
 				Binding:         0,
@@ -215,7 +215,7 @@ func main() {
 	info.DescLayout = append(info.DescLayout, descLayout)
 
 	/* Now use the descriptor layout to create a pipeline layout */
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutCreateOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
@@ -247,7 +247,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolCreateOptions{
 		MaxSets: 1,
 		PoolSizes: []core1_0.PoolSize{
 			{
@@ -261,13 +261,14 @@ func main() {
 	}
 
 	/* Allocate descriptor set with UNIFORM_BUFFER_DYNAMIC */
-	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
+	info.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
 
 	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{
@@ -295,7 +296,7 @@ func main() {
 
 	/* VULKAN_KEY_START */
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -341,7 +342,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

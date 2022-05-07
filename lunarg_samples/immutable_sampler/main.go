@@ -4,6 +4,7 @@ import (
 	"embed"
 	"encoding/binary"
 	"github.com/CannibalVox/VKng/core"
+	"github.com/CannibalVox/VKng/core/common"
 	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/CannibalVox/VKng/extensions/ext_debug_utils"
@@ -214,7 +215,7 @@ func main() {
 		},
 	}
 
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutOptions{
+	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutCreateOptions{
 		Bindings: resourceBinding,
 	})
 	if err != nil {
@@ -222,7 +223,7 @@ func main() {
 	}
 
 	// Create pipeline layout
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutCreateOptions{
 		SetLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
@@ -241,7 +242,7 @@ func main() {
 		},
 	}
 
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
+	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolCreateOptions{
 		MaxSets:   descriptorSetCount,
 		PoolSizes: poolSizes,
 	})
@@ -250,13 +251,14 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    descriptorPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
+	descriptorSets := common.ConvertSlice(descSets, core.MapDescriptorSets)
 
 	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{

@@ -44,12 +44,12 @@ var triData = []Vertex{
 }
 
 type vertexData struct {
-	Buffer core1_0.Buffer
-	Mem    core1_0.DeviceMemory
+	Buffer core.Buffer
+	Mem    core.DeviceMemory
 }
 
-var commandPools [3]core1_0.CommandPool
-var commandBuffers [3]core1_0.CommandBuffer
+var commandPools [3]core.CommandPool
+var commandBuffers [3]core.CommandBuffer
 var vertexBuffers [3]vertexData
 
 /*
@@ -155,7 +155,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -173,7 +173,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{})
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -345,7 +345,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -390,7 +390,7 @@ func main() {
 	for i := 0; i < 3; i++ {
 		vertexBuffers[i].Buffer.Destroy(nil)
 		vertexBuffers[i].Mem.Free(nil)
-		info.Loader.FreeCommandBuffers([]core1_0.CommandBuffer{commandBuffers[i]})
+		info.Loader.FreeCommandBuffers([]core.CommandBuffer{commandBuffers[i]})
 		commandPools[i].Destroy(nil)
 	}
 	info.ImageAcquiredSemaphore.Destroy(nil)
@@ -426,7 +426,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	/* triangle                                                             */
 	var err error
 
-	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, core1_0.CommandPoolOptions{
+	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, core1_0.CommandPoolCreateOptions{
 		GraphicsQueueFamily: &info.GraphicsQueueFamilyIndex,
 	})
 	if err != nil {
@@ -443,7 +443,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	}
 	commandBuffers[i] = buffers[0]
 
-	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
+	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferCreateOptions{
 		BufferSize:  3 * int(unsafe.Sizeof(triData[0])),
 		Usage:       core1_0.BufferUsageVertexBuffer,
 		SharingMode: core1_0.SharingExclusive,

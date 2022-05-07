@@ -210,7 +210,7 @@ func main() {
 		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -222,7 +222,7 @@ func main() {
 	}
 
 	/* Allocate a uniform buffer that will take query results. */
-	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferOptions{
+	queryResultBuf, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferCreateOptions{
 		BufferSize:  4 * int(unsafe.Sizeof(uint64(0))),
 		Usage:       core1_0.BufferUsageUniformBuffer | core1_0.BufferUsageTransferDst,
 		SharingMode: core1_0.SharingExclusive,
@@ -251,7 +251,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, core1_0.QueryPoolOptions{
+	queryPool, _, err := info.Loader.CreateQueryPool(info.Device, nil, core1_0.QueryPoolCreateOptions{
 		QueryType:  core1_0.QueryTypeOcclusion,
 		QueryCount: 2,
 	})
@@ -311,7 +311,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

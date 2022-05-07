@@ -207,7 +207,7 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolCreateOptions{
 		PoolSizes: []core1_0.PoolSize{
 			{
 				Type:            core1_0.DescriptorUniformBuffer,
@@ -224,13 +224,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
+	info.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
 
 	writes := []core1_0.WriteDescriptorSetOptions{
 		{
@@ -266,7 +267,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
+	secCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
 		CommandPool: info.CmdPool,
 		Level:       core1_0.LevelSecondary,
 		BufferCount: 4,
@@ -274,8 +275,9 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	secondaryCmds := common.ConvertSlice(secCmds, core.MapCommandBuffers)
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
+	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -373,7 +375,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -421,7 +423,7 @@ func main() {
 		}
 	}
 
-	info.Loader.FreeCommandBuffers(secondaryCmds)
+	info.Loader.FreeCommandBuffers(secCmds)
 
 	/* VULKAN_KEY_END */
 

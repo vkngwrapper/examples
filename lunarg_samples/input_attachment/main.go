@@ -135,7 +135,7 @@ func main() {
 	// Create the image that will be used as the input attachment
 	// The image for the color attachment is the presentable image already
 	// created in init_swapchain()
-	inputImage, _, err := info.Loader.CreateImage(info.Device, nil, core1_0.ImageOptions{
+	inputImage, _, err := info.Loader.CreateImage(info.Device, nil, core1_0.ImageCreateOptions{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
 		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
@@ -193,7 +193,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	inputAttachmentView, _, err := info.Loader.CreateImageView(info.Device, nil, core1_0.ImageViewOptions{
+	inputAttachmentView, _, err := info.Loader.CreateImageView(info.Device, nil, core1_0.ImageViewCreateOptions{
 		Image:    inputImage,
 		ViewType: core1_0.ViewType2D,
 		Format:   info.Format,
@@ -215,7 +215,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutOptions{
+	descLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutCreateOptions{
 		Bindings: []core1_0.DescriptorLayoutBinding{
 			{
 				Binding:         0,
@@ -230,7 +230,7 @@ func main() {
 	}
 	info.DescLayout = []core1_0.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutOptions{
+	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutCreateOptions{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
@@ -285,7 +285,7 @@ func main() {
 		DstAccessMask:   core1_0.AccessColorAttachmentWrite,
 	}
 
-	info.RenderPass, _, err = info.Loader.CreateRenderPass(info.Device, nil, core1_0.RenderPassOptions{
+	info.RenderPass, _, err = info.Loader.CreateRenderPass(info.Device, nil, core1_0.RenderPassCreateOptions{
 		Attachments:         attachments,
 		SubPasses:           []core1_0.SubPass{subpass},
 		SubPassDependencies: []core1_0.SubPassDependency{subpassDependency},
@@ -310,7 +310,7 @@ func main() {
 	}
 
 	for i := 0; i < info.SwapchainImageCount; i++ {
-		framebuffer, _, err := info.Loader.CreateFrameBuffer(info.Device, nil, core1_0.FramebufferOptions{
+		framebuffer, _, err := info.Loader.CreateFrameBuffer(info.Device, nil, core1_0.FramebufferCreateOptions{
 			RenderPass:  info.RenderPass,
 			Attachments: []core1_0.ImageView{info.Buffers[i].View, inputAttachmentView},
 			Width:       info.Width,
@@ -323,7 +323,7 @@ func main() {
 		info.Framebuffer = append(info.Framebuffer, framebuffer)
 	}
 
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolOptions{
+	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolCreateOptions{
 		MaxSets: 1,
 		PoolSizes: []core1_0.PoolSize{
 			{
@@ -336,13 +336,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
+
+	info.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
 
 	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{
@@ -372,7 +374,7 @@ func main() {
 	}
 
 	// Color attachment clear to gray
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -415,7 +417,7 @@ func main() {
 
 	/* VULKAN_KEY_END */
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceOptions{})
+	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
