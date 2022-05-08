@@ -258,7 +258,7 @@ func main() {
 
 	// Flush the mapped memory and then unmap it  Assume it isn't coherent since
 	// we didn't really confirm
-	_, err = info.Device.FlushMappedMemoryRanges([]core1_0.MappedMemoryRange{
+	_, err = info.Device.FlushMappedMemoryRanges([]core1_0.MappedMemoryRangeOptions{
 		{
 			Memory: dmem,
 			Offset: 0,

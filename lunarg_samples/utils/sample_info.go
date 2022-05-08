@@ -318,7 +318,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 func (i *SampleInfo) InitDevice() error {
 	var err error
 	i.Device, _, err = i.Loader.CreateDevice(i.Gpus[0], nil, core1_0.DeviceCreateOptions{
-		QueueFamilies: []core1_0.DeviceQueueOptions{
+		QueueFamilies: []core1_0.DeviceQueueCreateOptions{
 			{
 				QueueFamilyIndex:       i.GraphicsQueueFamilyIndex,
 				CreatedQueuePriorities: []float32{0.0},
@@ -339,7 +339,7 @@ func (i *SampleInfo) InitCommandPool() error {
 }
 
 func (i *SampleInfo) InitCommandBuffer() error {
-	buffers, _, err := i.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
+	buffers, _, err := i.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
 		CommandPool: i.CmdPool,
 		Level:       core1_0.LevelPrimary,
 		BufferCount: 1,
@@ -948,7 +948,7 @@ func (i *SampleInfo) InitDescriptorPool(useTexture bool) error {
 }
 
 func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
-	descSet, _, err := i.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := i.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    i.DescPool,
 		AllocationLayouts: i.DescLayout,
 	})
@@ -992,12 +992,12 @@ func (i *SampleInfo) InitPipelineCache() error {
 func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 	pipelineOptions := core1_0.GraphicsPipelineCreateOptions{
 		ShaderStages: i.ShaderStages,
-		VertexInput:  &core1_0.VertexInputOptions{},
-		InputAssembly: &core1_0.InputAssemblyOptions{
+		VertexInput:  &core1_0.VertexInputStateOptions{},
+		InputAssembly: &core1_0.InputAssemblyStateOptions{
 			EnablePrimitiveRestart: false,
 			Topology:               core1_0.TopologyTriangleList,
 		},
-		Viewport: &core1_0.ViewportOptions{
+		Viewport: &core1_0.ViewportStateOptions{
 			Viewports: []common.Viewport{
 				{},
 			},
@@ -1005,7 +1005,7 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 				{},
 			},
 		},
-		Rasterization: &core1_0.RasterizationOptions{
+		Rasterization: &core1_0.RasterizationStateOptions{
 			PolygonMode:             core1_0.PolygonModeFill,
 			CullMode:                core1_0.CullBack,
 			FrontFace:               core1_0.FrontFaceClockwise,
@@ -1017,14 +1017,14 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 			DepthBiasSlopeFactor:    0,
 			LineWidth:               1,
 		},
-		Multisample: &core1_0.MultisampleOptions{
+		Multisample: &core1_0.MultisampleStateOptions{
 			RasterizationSamples: NumSamples,
 			SampleShading:        false,
 			AlphaToCoverage:      false,
 			AlphaToOne:           false,
 			MinSampleShading:     0,
 		},
-		DepthStencil: &core1_0.DepthStencilOptions{
+		DepthStencil: &core1_0.DepthStencilStateOptions{
 			DepthTestEnable:       depthPresent,
 			DepthWriteEnable:      depthPresent,
 			DepthCompareOp:        core1_0.CompareLessOrEqual,
@@ -1051,7 +1051,7 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 			MinDepthBounds: 0,
 			MaxDepthBounds: 0,
 		},
-		ColorBlend: &core1_0.ColorBlendOptions{
+		ColorBlend: &core1_0.ColorBlendStateOptions{
 			LogicOpEnabled: false,
 			LogicOp:        core1_0.LogicOpNoop,
 			BlendConstants: [4]float32{1, 1, 1, 1},

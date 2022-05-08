@@ -224,7 +224,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
@@ -267,7 +267,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
+	secCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
 		CommandPool: info.CmdPool,
 		Level:       core1_0.LevelSecondary,
 		BufferCount: 4,
@@ -308,7 +308,7 @@ func main() {
 
 	// now we record four separate command buffers, one for each quadrant of the
 	// screen
-	inheritanceInfo := &core1_0.CommandBufferInheritanceOptions{
+	inheritanceInfo := &core1_0.InheritanceOptions{
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderPass:  info.RenderPass,
 		SubPass:     0,

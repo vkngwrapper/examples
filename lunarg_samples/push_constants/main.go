@@ -221,7 +221,7 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    descriptorPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})

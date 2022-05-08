@@ -433,7 +433,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	buffers, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferOptions{
+	buffers, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
 		CommandPool: commandPools[i],
 		Level:       core1_0.LevelPrimary,
 		BufferCount: 1,

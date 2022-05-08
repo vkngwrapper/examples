@@ -336,7 +336,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descLayout},
 	})

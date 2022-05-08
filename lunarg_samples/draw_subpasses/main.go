@@ -280,16 +280,16 @@ func main() {
 		DynamicStates: []common.DynamicState{},
 	}
 
-	vi := &core1_0.VertexInputOptions{
+	vi := &core1_0.VertexInputStateOptions{
 		VertexBindingDescriptions:   []core1_0.VertexBindingDescription{info.VertexBinding},
 		VertexAttributeDescriptions: info.VertexAttributes,
 	}
 
-	ia := &core1_0.InputAssemblyOptions{
+	ia := &core1_0.InputAssemblyStateOptions{
 		Topology: core1_0.TopologyTriangleList,
 	}
 
-	rs := &core1_0.RasterizationOptions{
+	rs := &core1_0.RasterizationStateOptions{
 		PolygonMode:             core1_0.PolygonModeFill,
 		CullMode:                core1_0.CullBack,
 		FrontFace:               core1_0.FrontFaceClockwise,
@@ -315,14 +315,14 @@ func main() {
 		},
 	}
 
-	cb := &core1_0.ColorBlendOptions{
+	cb := &core1_0.ColorBlendStateOptions{
 		Attachments:    attState,
 		LogicOpEnabled: false,
 		LogicOp:        core1_0.LogicOpNoop,
 		BlendConstants: [4]float32{1, 1, 1, 1},
 	}
 
-	vp := &core1_0.ViewportOptions{
+	vp := &core1_0.ViewportStateOptions{
 		Viewports: []common.Viewport{
 			{},
 		},
@@ -332,7 +332,7 @@ func main() {
 	}
 	dynamicState.DynamicStates = append(dynamicState.DynamicStates, core1_0.DynamicStateViewport, core1_0.DynamicStateScissor)
 
-	ds := &core1_0.DepthStencilOptions{
+	ds := &core1_0.DepthStencilStateOptions{
 		DepthTestEnable:       true,
 		DepthWriteEnable:      true,
 		DepthCompareOp:        core1_0.CompareLessOrEqual,
@@ -352,7 +352,7 @@ func main() {
 	}
 	ds.FrontStencilState = ds.BackStencilState
 
-	ms := &core1_0.MultisampleOptions{
+	ms := &core1_0.MultisampleStateOptions{
 		RasterizationSamples: utils.NumSamples,
 		SampleShading:        false,
 		MinSampleShading:     0,

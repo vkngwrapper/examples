@@ -261,7 +261,7 @@ func main() {
 	}
 
 	/* Allocate descriptor set with UNIFORM_BUFFER_DYNAMIC */
-	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetOptions{
+	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: info.DescLayout,
 	})
