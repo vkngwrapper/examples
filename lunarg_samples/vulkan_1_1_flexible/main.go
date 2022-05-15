@@ -5,6 +5,7 @@ import (
 	"github.com/CannibalVox/VKng/core"
 	"github.com/CannibalVox/VKng/core/common"
 	"github.com/CannibalVox/VKng/core/core1_0"
+	"github.com/CannibalVox/VKng/core/core1_1"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
@@ -43,10 +44,10 @@ func main() {
 	}
 
 	desiredVersion := common.Vulkan1_1
-	fmt.Printf("Loader/Runtime support detected for Vulkan %s\n", info.Loader.Version())
+	fmt.Printf("Loader/Runtime support detected for Vulkan %s\n", info.Loader.APIVersion())
 
 	actualVersion := common.Vulkan1_1
-	if info.Loader.Version().IsAtLeast(desiredVersion) {
+	if info.Loader.APIVersion().IsAtLeast(desiredVersion) {
 		if info.Loader.Core1_1() == nil {
 			log.Fatalln("loader v1.1 not loaded")
 		}
@@ -63,7 +64,8 @@ func main() {
 		}
 		defer instance.Destroy(nil)
 
-		if instance.Core1_1() == nil {
+		instance11 := core1_1.PromoteInstance(instance)
+		if instance11 == nil {
 			log.Fatalln("instance v1.1 not loaded")
 		}
 
@@ -74,7 +76,8 @@ func main() {
 
 		for _, device := range physicalDevices {
 			if device.DeviceAPIVersion().IsAtLeast(desiredVersion) {
-				if device.Core1_1Instance() == nil {
+				device11 := core1_1.PromotePhysicalDevice(device)
+				if device11 == nil {
 					log.Fatalln("physical device v1.1 not loaded")
 				}
 
@@ -87,6 +90,6 @@ func main() {
 	if actualVersion < desiredVersion {
 		log.Printf("Determined that this system can only use Vulkan API version %s instead of desired version %s\n", actualVersion, desiredVersion)
 	} else {
-		log.Println("Determined at this system can run desired Vulkan API version", desiredVersion)
+		log.Println("Determined that this system can run desired Vulkan API version", desiredVersion)
 	}
 }

@@ -261,14 +261,13 @@ func main() {
 	}
 
 	/* Allocate descriptor set with UNIFORM_BUFFER_DYNAMIC */
-	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
 
 	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{

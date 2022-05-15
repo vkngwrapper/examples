@@ -221,14 +221,13 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
+	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    descriptorPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	descriptorSets := common.ConvertSlice(descSets, core.MapDescriptorSets)
 
 	// Populate with info about our uniform buffer for MVP
 	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{

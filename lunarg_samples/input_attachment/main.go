@@ -336,15 +336,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-
-	info.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
 
 	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
 		{

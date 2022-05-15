@@ -224,14 +224,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descSet, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
+	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
 
 	writes := []core1_0.WriteDescriptorSetOptions{
 		{
@@ -267,7 +266,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
+	secondaryCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
 		CommandPool: info.CmdPool,
 		Level:       core1_0.LevelSecondary,
 		BufferCount: 4,
@@ -275,7 +274,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	secondaryCmds := common.ConvertSlice(secCmds, core.MapCommandBuffers)
 
 	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
@@ -423,7 +421,7 @@ func main() {
 		}
 	}
 
-	info.Loader.FreeCommandBuffers(secCmds)
+	info.Loader.FreeCommandBuffers(secondaryCmds)
 
 	/* VULKAN_KEY_END */
 

@@ -23,8 +23,8 @@ type LayerProperties struct {
 }
 
 type SwapchainBuffer struct {
-	Image core.Image
-	View  core.ImageView
+	Image core1_0.Image
+	View  core1_0.ImageView
 }
 
 type SampleInfo struct {
@@ -39,21 +39,21 @@ type SampleInfo struct {
 	InstanceExtensionNames      []string
 	InstanceLayerProperties     []*LayerProperties
 	InstanceExtensionProperties []*common.ExtensionProperties
-	Instance                    core.Instance
+	Instance                    core1_0.Instance
 
 	DeviceExtensionNames      []string
 	DeviceExtensionProperties []*common.ExtensionProperties
-	Gpus                      []core.PhysicalDevice
-	Device                    core.Device
-	GraphicsQueue             core.Queue
-	PresentQueue              core.Queue
+	Gpus                      []core1_0.PhysicalDevice
+	Device                    core1_0.Device
+	GraphicsQueue             core1_0.Queue
+	PresentQueue              core1_0.Queue
 	GraphicsQueueFamilyIndex  int
 	PresentQueueFamilyIndex   int
 	GpuProps                  *core1_0.PhysicalDeviceProperties
 	QueueProps                []*core1_0.QueueFamily
 	MemoryProperties          *core1_0.PhysicalDeviceMemoryProperties
 
-	Framebuffer   []core.Framebuffer
+	Framebuffer   []core1_0.Framebuffer
 	Width, Height int
 	Format        common.DataFormat
 
@@ -61,22 +61,22 @@ type SampleInfo struct {
 	SwapchainExtension     khr_swapchain.Extension
 	Swapchain              khr_swapchain.Swapchain
 	Buffers                []SwapchainBuffer
-	ImageAcquiredSemaphore core.Semaphore
+	ImageAcquiredSemaphore core1_0.Semaphore
 
-	CmdPool core.CommandPool
+	CmdPool core1_0.CommandPool
 
 	Depth struct {
 		Format common.DataFormat
-		Image  core.Image
-		Mem    core.DeviceMemory
-		View   core.ImageView
+		Image  core1_0.Image
+		Mem    core1_0.DeviceMemory
+		View   core1_0.ImageView
 	}
 
 	Textures []*TextureObject
 
 	UniformData struct {
-		Buf        core.Buffer
-		Mem        core.DeviceMemory
+		Buf        core1_0.Buffer
+		Mem        core1_0.DeviceMemory
 		BufferInfo core1_0.DescriptorBufferInfo
 	}
 
@@ -85,8 +85,8 @@ type SampleInfo struct {
 	}
 
 	VertexBuffer struct {
-		Buf        core.Buffer
-		Mem        core.DeviceMemory
+		Buf        core1_0.Buffer
+		Mem        core1_0.DeviceMemory
 		BufferInfo core1_0.DescriptorBufferInfo
 	}
 
@@ -99,16 +99,16 @@ type SampleInfo struct {
 	Clip       mgl32.Mat4
 	MVP        mgl32.Mat4
 
-	Cmd            core.CommandBuffer // BUffer for initialization commands
-	PipelineLayout core.PipelineLayout
+	Cmd            core1_0.CommandBuffer // BUffer for initialization commands
+	PipelineLayout core1_0.PipelineLayout
 	DescLayout     []core1_0.DescriptorSetLayout
-	PipelineCache  core.PipelineCache
-	RenderPass     core.RenderPass
-	Pipeline       core.Pipeline
+	PipelineCache  core1_0.PipelineCache
+	RenderPass     core1_0.RenderPass
+	Pipeline       core1_0.Pipeline
 
 	ShaderStages []core1_0.ShaderStageOptions
 
-	DescPool core.DescriptorPool
+	DescPool core1_0.DescriptorPool
 	DescSet  []core1_0.DescriptorSet
 
 	//PFN_vkCreateDebugReportCallbackEXT dbgCreateDebugReportCallback;
@@ -844,7 +844,7 @@ func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 	return nil
 }
 
-func (i *SampleInfo) InitVertexBuffers(vertexData interface{}, dataSize int, dataStride int, useTexture bool) error {
+func (i *SampleInfo) InitVertexBuffers(vertexData any, dataSize int, dataStride int, useTexture bool) error {
 	var err error
 	i.VertexBuffer.Buf, _, err = i.Loader.CreateBuffer(i.Device, nil, core1_0.BufferCreateOptions{
 		BufferSize:  dataSize,
@@ -956,7 +956,7 @@ func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
 		log.Fatalln(err)
 	}
 
-	i.DescSet = common.ConvertSlice(descSet, core.MapDescriptorSets)
+	i.DescSet = descSet
 
 	writes := []core1_0.WriteDescriptorSetOptions{
 		{

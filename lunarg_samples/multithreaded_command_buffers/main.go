@@ -44,12 +44,12 @@ var triData = []Vertex{
 }
 
 type vertexData struct {
-	Buffer core.Buffer
-	Mem    core.DeviceMemory
+	Buffer core1_0.Buffer
+	Mem    core1_0.DeviceMemory
 }
 
-var commandPools [3]core.CommandPool
-var commandBuffers [3]core.CommandBuffer
+var commandPools [3]core1_0.CommandPool
+var commandBuffers [3]core1_0.CommandBuffer
 var vertexBuffers [3]vertexData
 
 /*
@@ -390,7 +390,7 @@ func main() {
 	for i := 0; i < 3; i++ {
 		vertexBuffers[i].Buffer.Destroy(nil)
 		vertexBuffers[i].Mem.Free(nil)
-		info.Loader.FreeCommandBuffers([]core.CommandBuffer{commandBuffers[i]})
+		info.Loader.FreeCommandBuffers([]core1_0.CommandBuffer{commandBuffers[i]})
 		commandPools[i].Destroy(nil)
 	}
 	info.ImageAcquiredSemaphore.Destroy(nil)
