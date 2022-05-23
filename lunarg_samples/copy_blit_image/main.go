@@ -142,7 +142,7 @@ func main() {
 		log.Fatalln("FOrmat cannot be used as transfer source")
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -162,7 +162,7 @@ func main() {
 	}
 
 	// Create an image, map it, and write some values to the image
-	bltSrcImage, _, err := info.Loader.CreateImage(info.Device, nil, core1_0.ImageCreateOptions{
+	bltSrcImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateOptions{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
 		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
@@ -184,7 +184,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	dmem, _, err := info.Loader.AllocateMemory(info.Device, nil, core1_0.MemoryAllocateOptions{
+	dmem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReq.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -391,7 +391,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

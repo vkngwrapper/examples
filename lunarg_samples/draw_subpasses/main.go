@@ -264,7 +264,7 @@ func main() {
 		SubPassDependencies: dependencies,
 	}
 
-	stencilRenderPass, _, err := info.Loader.CreateRenderPass(info.Device, nil, renderPassOptions)
+	stencilRenderPass, _, err := info.Device.CreateRenderPass(nil, renderPassOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -394,7 +394,7 @@ func main() {
 	/* The first pipeline will render in subpass 0 to fill the stencil */
 	pipelineOptions.SubPass = 0
 
-	stencilCubePipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{pipelineOptions})
+	stencilCubePipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{pipelineOptions})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -434,7 +434,7 @@ func main() {
 	pipelineOptions.SubPass = 1
 	pipelineOptions.ColorBlend = cb
 
-	stencilFullscreenPipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{pipelineOptions})
+	stencilFullscreenPipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{pipelineOptions})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -447,7 +447,7 @@ func main() {
 		common.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -531,7 +531,7 @@ func main() {
 	renderPassOptions.SubPassDependencies[0].DstAccessMask |= core1_0.AccessColorAttachmentRead | core1_0.AccessColorAttachmentWrite
 	renderPassOptions.SubPassDependencies = renderPassOptions.SubPassDependencies[0:1]
 
-	blendRenderPass, _, err := info.Loader.CreateRenderPass(info.Device, nil, renderPassOptions)
+	blendRenderPass, _, err := info.Device.CreateRenderPass(nil, renderPassOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -587,7 +587,7 @@ func main() {
 	 * image */
 	pipelineOptions.SubPass = 0
 
-	blendCubePipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{
+	blendCubePipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{
 		pipelineOptions,
 	})
 	if err != nil {
@@ -616,7 +616,7 @@ func main() {
 	/* This renders in the second subpass */
 	pipelineOptions.SubPass = 1
 
-	blendFullscreenPipe, _, err := info.Loader.CreateGraphicsPipelines(info.Device, info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{pipelineOptions})
+	blendFullscreenPipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateOptions{pipelineOptions})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -671,7 +671,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}

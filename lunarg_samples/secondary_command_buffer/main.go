@@ -207,7 +207,7 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolCreateOptions{
+	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateOptions{
 		PoolSizes: []core1_0.PoolSize{
 			{
 				Type:            core1_0.DescriptorUniformBuffer,
@@ -224,7 +224,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
+	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    info.DescPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
@@ -266,7 +266,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
+	secondaryCmds, _, err := info.Device.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
 		CommandPool: info.CmdPool,
 		Level:       core1_0.LevelSecondary,
 		BufferCount: 4,
@@ -275,7 +275,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	imageAcquiredSemaphore, _, err := info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -373,7 +373,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -421,7 +421,7 @@ func main() {
 		}
 	}
 
-	info.Loader.FreeCommandBuffers(secondaryCmds)
+	info.Device.FreeCommandBuffers(secondaryCmds)
 
 	/* VULKAN_KEY_END */
 

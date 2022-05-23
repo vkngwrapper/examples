@@ -319,7 +319,7 @@ func main() {
 	}
 
 	// Feed the initial cache data into cache creation
-	info.PipelineCache, _, err = info.Loader.CreatePipelineCache(info.Device, nil, core1_0.PipelineCacheCreateOptions{
+	info.PipelineCache, _, err = info.Device.CreatePipelineCache(nil, core1_0.PipelineCacheCreateOptions{
 		InitialData: pipelineData,
 	})
 	if err != nil {

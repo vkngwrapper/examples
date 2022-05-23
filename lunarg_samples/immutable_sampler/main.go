@@ -214,7 +214,7 @@ func main() {
 		},
 	}
 
-	descriptorLayout, _, err := info.Loader.CreateDescriptorSetLayout(info.Device, nil, core1_0.DescriptorSetLayoutCreateOptions{
+	descriptorLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateOptions{
 		Bindings: resourceBinding,
 	})
 	if err != nil {
@@ -222,7 +222,7 @@ func main() {
 	}
 
 	// Create pipeline layout
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutCreateOptions{
+	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateOptions{
 		SetLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
@@ -241,7 +241,7 @@ func main() {
 		},
 	}
 
-	descriptorPool, _, err := info.Loader.CreateDescriptorPool(info.Device, nil, core1_0.DescriptorPoolCreateOptions{
+	descriptorPool, _, err := info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateOptions{
 		MaxSets:   descriptorSetCount,
 		PoolSizes: poolSizes,
 	})
@@ -250,7 +250,7 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := info.Loader.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
+	descriptorSets, _, err := info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
 		DescriptorPool:    descriptorPool,
 		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
 	})

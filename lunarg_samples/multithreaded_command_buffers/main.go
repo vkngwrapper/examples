@@ -155,7 +155,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.ImageAcquiredSemaphore, _, err = info.Loader.CreateSemaphore(info.Device, nil, core1_0.SemaphoreCreateOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -173,7 +173,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.PipelineLayout, _, err = info.Loader.CreatePipelineLayout(info.Device, nil, core1_0.PipelineLayoutCreateOptions{})
+	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -345,7 +345,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Loader.CreateFence(info.Device, nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -390,7 +390,7 @@ func main() {
 	for i := 0; i < 3; i++ {
 		vertexBuffers[i].Buffer.Destroy(nil)
 		vertexBuffers[i].Mem.Free(nil)
-		info.Loader.FreeCommandBuffers([]core1_0.CommandBuffer{commandBuffers[i]})
+		info.Device.FreeCommandBuffers([]core1_0.CommandBuffer{commandBuffers[i]})
 		commandPools[i].Destroy(nil)
 	}
 	info.ImageAcquiredSemaphore.Destroy(nil)
@@ -426,14 +426,14 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	/* triangle                                                             */
 	var err error
 
-	commandPools[i], _, err = info.Loader.CreateCommandPool(info.Device, nil, core1_0.CommandPoolCreateOptions{
+	commandPools[i], _, err = info.Device.CreateCommandPool(nil, core1_0.CommandPoolCreateOptions{
 		GraphicsQueueFamily: &info.GraphicsQueueFamilyIndex,
 	})
 	if err != nil {
 		return err
 	}
 
-	buffers, _, err := info.Loader.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
+	buffers, _, err := info.Device.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
 		CommandPool: commandPools[i],
 		Level:       core1_0.LevelPrimary,
 		BufferCount: 1,
@@ -443,7 +443,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	}
 	commandBuffers[i] = buffers[0]
 
-	vertexBuffer, _, err := info.Loader.CreateBuffer(info.Device, nil, core1_0.BufferCreateOptions{
+	vertexBuffer, _, err := info.Device.CreateBuffer(nil, core1_0.BufferCreateOptions{
 		BufferSize:  3 * int(unsafe.Sizeof(triData[0])),
 		Usage:       core1_0.BufferUsageVertexBuffer,
 		SharingMode: core1_0.SharingExclusive,
@@ -459,7 +459,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 		return err
 	}
 
-	vertexMem, _, err := info.Loader.AllocateMemory(info.Device, nil, core1_0.MemoryAllocateOptions{
+	vertexMem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})

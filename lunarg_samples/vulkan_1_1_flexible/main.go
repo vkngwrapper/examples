@@ -48,10 +48,6 @@ func main() {
 
 	actualVersion := common.Vulkan1_1
 	if info.Loader.APIVersion().IsAtLeast(desiredVersion) {
-		if info.Loader.Core1_1() == nil {
-			log.Fatalln("loader v1.1 not loaded")
-		}
-
 		instance, _, err := info.Loader.CreateInstance(nil, core1_0.InstanceCreateOptions{
 			ApplicationName:    "vulkan_1_1_sampler",
 			ApplicationVersion: common.CreateVersion(1, 0, 0),
@@ -69,7 +65,7 @@ func main() {
 			log.Fatalln("instance v1.1 not loaded")
 		}
 
-		physicalDevices, _, err := info.Loader.PhysicalDevices(instance)
+		physicalDevices, _, err := instance.PhysicalDevices()
 		if err != nil {
 			log.Fatalln(err)
 		}
