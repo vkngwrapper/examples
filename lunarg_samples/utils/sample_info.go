@@ -736,7 +736,7 @@ func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initi
 
 	renderPassOptions := core1_0.RenderPassCreateOptions{
 		Attachments: attachments,
-		SubPasses: []core1_0.SubPass{
+		SubPassDescriptions: []core1_0.SubPassDescription{
 			{
 				BindPoint: core1_0.BindGraphics,
 				ColorAttachments: []common.AttachmentReference{
@@ -760,7 +760,7 @@ func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initi
 	}
 
 	if depthPresent {
-		renderPassOptions.SubPasses[0].DepthStencilAttachment = &common.AttachmentReference{
+		renderPassOptions.SubPassDescriptions[0].DepthStencilAttachment = &common.AttachmentReference{
 			AttachmentIndex: 1,
 			Layout:          core1_0.ImageLayoutDepthStencilAttachmentOptimal,
 		}

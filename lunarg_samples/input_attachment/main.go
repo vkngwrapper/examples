@@ -270,7 +270,7 @@ func main() {
 	colorRef := common.AttachmentReference{AttachmentIndex: 0, Layout: core1_0.ImageLayoutColorAttachmentOptimal}
 	inputRef := common.AttachmentReference{AttachmentIndex: 1, Layout: core1_0.ImageLayoutShaderReadOnlyOptimal}
 
-	subpass := core1_0.SubPass{
+	subpass := core1_0.SubPassDescription{
 		BindPoint:        core1_0.BindGraphics,
 		InputAttachments: []common.AttachmentReference{inputRef},
 		ColorAttachments: []common.AttachmentReference{colorRef},
@@ -287,7 +287,7 @@ func main() {
 
 	info.RenderPass, _, err = info.Device.CreateRenderPass(nil, core1_0.RenderPassCreateOptions{
 		Attachments:         attachments,
-		SubPasses:           []core1_0.SubPass{subpass},
+		SubPassDescriptions: []core1_0.SubPassDescription{subpass},
 		SubPassDependencies: []core1_0.SubPassDependency{subpassDependency},
 	})
 	if err != nil {

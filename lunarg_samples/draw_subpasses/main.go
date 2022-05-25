@@ -216,7 +216,7 @@ func main() {
 		Layout:          core1_0.ImageLayoutUndefined,
 	}
 
-	subpass := core1_0.SubPass{
+	subpass := core1_0.SubPassDescription{
 		BindPoint:              core1_0.BindGraphics,
 		DepthStencilAttachment: depthStencilRef,
 		ColorAttachments: []common.AttachmentReference{
@@ -224,7 +224,7 @@ func main() {
 		},
 	}
 
-	subpasses := []core1_0.SubPass{}
+	subpasses := []core1_0.SubPassDescription{}
 
 	/* first a depthstencil-only subpass */
 	subpasses = append(subpasses, subpass)
@@ -260,7 +260,7 @@ func main() {
 
 	renderPassOptions := core1_0.RenderPassCreateOptions{
 		Attachments:         attachments,
-		SubPasses:           subpasses,
+		SubPassDescriptions: subpasses,
 		SubPassDependencies: dependencies,
 	}
 
@@ -522,7 +522,7 @@ func main() {
 
 	/* note that we reuse a lot of the initialisation strutures from the first
 	   render pass, so this represents a 'delta' from that configuration */
-	renderPassOptions.SubPasses[0].ColorAttachments[0] = colorRef
+	renderPassOptions.SubPassDescriptions[0].ColorAttachments[0] = colorRef
 	renderPassOptions.Attachments[0].InitialLayout = core1_0.ImageLayoutColorAttachmentOptimal
 	renderPassOptions.Attachments[0].FinalLayout = khr_swapchain.ImageLayoutPresentSrc
 	renderPassOptions.Attachments[1].InitialLayout = core1_0.ImageLayoutDepthStencilAttachmentOptimal
