@@ -310,7 +310,7 @@ func main() {
 	}
 
 	for i := 0; i < info.SwapchainImageCount; i++ {
-		framebuffer, _, err := info.Device.CreateFrameBuffer(nil, core1_0.FramebufferCreateOptions{
+		framebuffer, _, err := info.Device.CreateFramebuffer(nil, core1_0.FramebufferCreateOptions{
 			RenderPass:  info.RenderPass,
 			Attachments: []core1_0.ImageView{info.Buffers[i].View, inputAttachmentView},
 			Width:       info.Width,

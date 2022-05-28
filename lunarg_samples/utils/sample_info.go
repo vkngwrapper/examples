@@ -833,7 +833,7 @@ func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 		framebufferOptions.Attachments[0] = i.Buffers[swapchainInd].View
 
 		var err error
-		frameBuffer, _, err := i.Device.CreateFrameBuffer(nil, framebufferOptions)
+		frameBuffer, _, err := i.Device.CreateFramebuffer(nil, framebufferOptions)
 		if err != nil {
 			return err
 		}
