@@ -205,9 +205,9 @@ func main() {
 
 	/* VULKAN_KEY_START */
 
-	clearValues := []common.ClearValue{
-		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
+	clearValues := []core1_0.ClearValue{
+		core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		core1_0.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
 	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
@@ -264,9 +264,9 @@ func main() {
 	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{Width: info.Width, Height: info.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{Width: info.Width, Height: info.Height},
 		},
 		ClearValues: clearValues,
 	})
@@ -279,7 +279,7 @@ func main() {
 
 	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
-	info.Cmd.CmdSetViewport([]common.Viewport{
+	info.Cmd.CmdSetViewport([]core1_0.Viewport{
 		{
 			X: 0, Y: 0,
 			MinDepth: 0, MaxDepth: 1,
@@ -288,10 +288,10 @@ func main() {
 		},
 	})
 
-	info.Cmd.CmdSetScissor([]common.Rect2D{
+	info.Cmd.CmdSetScissor([]core1_0.Rect2D{
 		{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width, info.Height},
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width, info.Height},
 		},
 	})
 
@@ -320,7 +320,7 @@ func main() {
 	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
 		{
 			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
 	})

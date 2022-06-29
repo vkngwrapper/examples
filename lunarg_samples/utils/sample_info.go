@@ -17,9 +17,9 @@ import (
 )
 
 type LayerProperties struct {
-	Properties         *common.LayerProperties
-	InstanceExtensions []*common.ExtensionProperties
-	DeviceExtensions   []*common.ExtensionProperties
+	Properties         *core1_0.LayerProperties
+	InstanceExtensions []*core1_0.ExtensionProperties
+	DeviceExtensions   []*core1_0.ExtensionProperties
 }
 
 type SwapchainBuffer struct {
@@ -38,11 +38,11 @@ type SampleInfo struct {
 	InstanceLayerNames          []string
 	InstanceExtensionNames      []string
 	InstanceLayerProperties     []*LayerProperties
-	InstanceExtensionProperties []*common.ExtensionProperties
+	InstanceExtensionProperties []*core1_0.ExtensionProperties
 	Instance                    core1_0.Instance
 
 	DeviceExtensionNames      []string
-	DeviceExtensionProperties []*common.ExtensionProperties
+	DeviceExtensionProperties []*core1_0.ExtensionProperties
 	Gpus                      []core1_0.PhysicalDevice
 	Device                    core1_0.Device
 	GraphicsQueue             core1_0.Queue
@@ -55,7 +55,7 @@ type SampleInfo struct {
 
 	Framebuffer   []core1_0.Framebuffer
 	Width, Height int
-	Format        common.DataFormat
+	Format        core1_0.DataFormat
 
 	SwapchainImageCount    int
 	SwapchainExtension     khr_swapchain.Extension
@@ -66,7 +66,7 @@ type SampleInfo struct {
 	CmdPool core1_0.CommandPool
 
 	Depth struct {
-		Format common.DataFormat
+		Format core1_0.DataFormat
 		Image  core1_0.Image
 		Mem    core1_0.DeviceMemory
 		View   core1_0.ImageView
@@ -119,8 +119,8 @@ type SampleInfo struct {
 	CurrentBuffer    int
 	QueueFamilyCount int
 
-	Viewport common.Viewport
-	Scissor  common.Rect2D
+	Viewport core1_0.Viewport
+	Scissor  core1_0.Rect2D
 }
 
 func (i *SampleInfo) InitWindowSize(defaultWidth, defaultHeight int) error {
@@ -373,13 +373,13 @@ func (i *SampleInfo) InitDeviceQueue() error {
 	return nil
 }
 
-func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
+func (i *SampleInfo) InitSwapchain(usage core1_0.ImageUsages) error {
 	surfaceCaps, _, err := i.Surface.Capabilities(i.Gpus[0])
 	if err != nil {
 		return err
 	}
 
-	var swapchainExtent common.Extent2D
+	var swapchainExtent core1_0.Extent2D
 	if surfaceCaps.CurrentExtent.Width < 0 {
 		// If the surface size is undefined, the size is set to
 		// the size of the images requested.
@@ -485,7 +485,7 @@ func (i *SampleInfo) InitSwapchain(usage common.ImageUsages) error {
 				B: core1_0.SwizzleBlue,
 				A: core1_0.SwizzleAlpha,
 			},
-			SubresourceRange: common.ImageSubresourceRange{
+			SubresourceRange: core1_0.ImageSubresourceRange{
 				AspectMask:     core1_0.AspectColor,
 				BaseMipLevel:   0,
 				LevelCount:     1,
@@ -518,7 +518,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	imageOptions := core1_0.ImageCreateOptions{
 		ImageType: core1_0.ImageType2D,
 		Format:    depthFormat,
-		Extent: common.Extent3D{
+		Extent: core1_0.Extent3D{
 			Width:  i.Width,
 			Height: i.Height,
 			Depth:  1,
@@ -572,7 +572,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 			G: core1_0.SwizzleGreen,
 			B: core1_0.SwizzleBlue,
 		},
-		SubresourceRange: common.ImageSubresourceRange{
+		SubresourceRange: core1_0.ImageSubresourceRange{
 			AspectMask:     core1_0.AspectDepth,
 			BaseMipLevel:   0,
 			LevelCount:     1,
@@ -584,7 +584,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	return err
 }
 
-func (i *SampleInfo) MemoryTypeFromProperties(memoryType uint32, flags common.MemoryProperties) (int, error) {
+func (i *SampleInfo) MemoryTypeFromProperties(memoryType uint32, flags core1_0.MemoryProperties) (int, error) {
 	for typeIndex, memType := range i.MemoryProperties.MemoryTypes {
 		if (memoryType & 1) != 0 {
 			// Type is available, does it match user properties?
@@ -699,7 +699,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 	return err
 }
 
-func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initialLayout common.ImageLayout) error {
+func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initialLayout core1_0.ImageLayout) error {
 	attachments := []core1_0.AttachmentDescription{
 		{
 			Format:         i.Format,
@@ -739,7 +739,7 @@ func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initi
 		SubPassDescriptions: []core1_0.SubPassDescription{
 			{
 				BindPoint: core1_0.BindGraphics,
-				ColorAttachments: []common.AttachmentReference{
+				ColorAttachments: []core1_0.AttachmentReference{
 					{
 						AttachmentIndex: 0,
 						Layout:          core1_0.ImageLayoutColorAttachmentOptimal,
@@ -760,7 +760,7 @@ func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initi
 	}
 
 	if depthPresent {
-		renderPassOptions.SubPassDescriptions[0].DepthStencilAttachment = &common.AttachmentReference{
+		renderPassOptions.SubPassDescriptions[0].DepthStencilAttachment = &core1_0.AttachmentReference{
 			AttachmentIndex: 1,
 			Layout:          core1_0.ImageLayoutDepthStencilAttachmentOptimal,
 		}
@@ -998,10 +998,10 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 			Topology:               core1_0.TopologyTriangleList,
 		},
 		Viewport: &core1_0.ViewportStateOptions{
-			Viewports: []common.Viewport{
+			Viewports: []core1_0.Viewport{
 				{},
 			},
-			Scissors: []common.Rect2D{
+			Scissors: []core1_0.Rect2D{
 				{},
 			},
 		},
@@ -1064,12 +1064,12 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 					SrcAlpha:     core1_0.BlendZero,
 					DstAlpha:     core1_0.BlendZero,
 					AlphaBlendOp: core1_0.BlendOpAdd,
-					WriteMask:    common.ComponentRed | common.ComponentGreen | common.ComponentBlue | common.ComponentAlpha,
+					WriteMask:    core1_0.ComponentRed | core1_0.ComponentGreen | core1_0.ComponentBlue | core1_0.ComponentAlpha,
 				},
 			},
 		},
 		DynamicState: &core1_0.DynamicStateOptions{
-			DynamicStates: []common.DynamicState{core1_0.DynamicStateViewport, core1_0.DynamicStateScissor},
+			DynamicStates: []core1_0.DynamicState{core1_0.DynamicStateViewport, core1_0.DynamicStateScissor},
 		},
 		Layout:     i.PipelineLayout,
 		RenderPass: i.RenderPass,
@@ -1105,10 +1105,10 @@ func (i *SampleInfo) InitPresentableImage() error {
 	return err
 }
 
-func (i *SampleInfo) InitClearColorAndDepth() []common.ClearValue {
-	return []common.ClearValue{
-		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		common.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
+func (i *SampleInfo) InitClearColorAndDepth() []core1_0.ClearValue {
+	return []core1_0.ClearValue{
+		core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		core1_0.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
 	}
 }
 
@@ -1116,15 +1116,15 @@ func (i *SampleInfo) InitRenderPassBeginInfo() core1_0.RenderPassBeginOptions {
 	return core1_0.RenderPassBeginOptions{
 		RenderPass:  i.RenderPass,
 		Framebuffer: i.Framebuffer[i.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{Width: i.Width, Height: i.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{Width: i.Width, Height: i.Height},
 		},
 	}
 }
 
 func (i *SampleInfo) InitViewports() {
-	i.Viewport = common.Viewport{
+	i.Viewport = core1_0.Viewport{
 		X:        0,
 		Y:        0,
 		Width:    float32(i.Width),
@@ -1132,15 +1132,15 @@ func (i *SampleInfo) InitViewports() {
 		MinDepth: 0,
 		MaxDepth: 1,
 	}
-	i.Cmd.CmdSetViewport([]common.Viewport{i.Viewport})
+	i.Cmd.CmdSetViewport([]core1_0.Viewport{i.Viewport})
 }
 
 func (i *SampleInfo) InitScissors() {
-	i.Scissor = common.Rect2D{
-		Offset: common.Offset2D{0, 0},
-		Extent: common.Extent2D{i.Width, i.Height},
+	i.Scissor = core1_0.Rect2D{
+		Offset: core1_0.Offset2D{0, 0},
+		Extent: core1_0.Extent2D{i.Width, i.Height},
 	}
-	i.Cmd.CmdSetScissor([]common.Rect2D{i.Scissor})
+	i.Cmd.CmdSetScissor([]core1_0.Rect2D{i.Scissor})
 }
 
 func (i *SampleInfo) InitFence() (core1_0.Fence, error) {
@@ -1148,11 +1148,11 @@ func (i *SampleInfo) InitFence() (core1_0.Fence, error) {
 	return fence, err
 }
 
-func (i *SampleInfo) InitSubmitInfo(stageFlags common.PipelineStages) *core1_0.SubmitOptions {
+func (i *SampleInfo) InitSubmitInfo(stageFlags core1_0.PipelineStages) *core1_0.SubmitOptions {
 	return &core1_0.SubmitOptions{
 		CommandBuffers: []core1_0.CommandBuffer{i.Cmd},
 		WaitSemaphores: []core1_0.Semaphore{i.ImageAcquiredSemaphore},
-		WaitDstStages:  []common.PipelineStages{stageFlags},
+		WaitDstStages:  []core1_0.PipelineStages{stageFlags},
 	}
 }
 
@@ -1188,7 +1188,7 @@ func (i *SampleInfo) ExecuteQueueCmdBuf(cmdBufs []core1_0.CommandBuffer, fence c
 	_, err := i.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{
 		{
 			WaitSemaphores: []core1_0.Semaphore{i.ImageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 			CommandBuffers: cmdBufs,
 		},
 	})

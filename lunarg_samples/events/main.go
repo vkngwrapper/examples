@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/CannibalVox/VKng/core"
-	"github.com/CannibalVox/VKng/core/common"
 	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"log"
@@ -71,7 +70,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// Start with a trivial command buffer and make sure fence wait doesn't time out
-	info.Cmd.CmdSetViewport([]common.Viewport{
+	info.Cmd.CmdSetViewport([]core1_0.Viewport{
 		{
 			X:        0,
 			Y:        0,

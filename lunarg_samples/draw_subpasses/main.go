@@ -203,15 +203,15 @@ func main() {
 			FinalLayout:    core1_0.ImageLayoutDepthStencilAttachmentOptimal,
 		},
 	}
-	depthStencilRef := &common.AttachmentReference{
+	depthStencilRef := &core1_0.AttachmentReference{
 		AttachmentIndex: 1,
 		Layout:          core1_0.ImageLayoutDepthStencilAttachmentOptimal,
 	}
-	colorRef := common.AttachmentReference{
+	colorRef := core1_0.AttachmentReference{
 		AttachmentIndex: 0,
 		Layout:          core1_0.ImageLayoutColorAttachmentOptimal,
 	}
-	unusedRef := common.AttachmentReference{
+	unusedRef := core1_0.AttachmentReference{
 		AttachmentIndex: -1,
 		Layout:          core1_0.ImageLayoutUndefined,
 	}
@@ -219,7 +219,7 @@ func main() {
 	subpass := core1_0.SubPassDescription{
 		BindPoint:              core1_0.BindGraphics,
 		DepthStencilAttachment: depthStencilRef,
-		ColorAttachments: []common.AttachmentReference{
+		ColorAttachments: []core1_0.AttachmentReference{
 			unusedRef,
 		},
 	}
@@ -229,7 +229,7 @@ func main() {
 	/* first a depthstencil-only subpass */
 	subpasses = append(subpasses, subpass)
 
-	subpass.ColorAttachments = []common.AttachmentReference{colorRef}
+	subpass.ColorAttachments = []core1_0.AttachmentReference{colorRef}
 
 	/* then depthstencil and color */
 	subpasses = append(subpasses, subpass)
@@ -277,7 +277,7 @@ func main() {
 	}
 
 	dynamicState := &core1_0.DynamicStateOptions{
-		DynamicStates: []common.DynamicState{},
+		DynamicStates: []core1_0.DynamicState{},
 	}
 
 	vi := &core1_0.VertexInputStateOptions{
@@ -323,10 +323,10 @@ func main() {
 	}
 
 	vp := &core1_0.ViewportStateOptions{
-		Viewports: []common.Viewport{
+		Viewports: []core1_0.Viewport{
 			{},
 		},
-		Scissors: []common.Rect2D{
+		Scissors: []core1_0.Rect2D{
 			{},
 		},
 	}
@@ -442,9 +442,9 @@ func main() {
 	info.DestroyShaders()
 	info.Pipeline = nil
 
-	clearValues := []common.ClearValue{
-		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		common.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
+	clearValues := []core1_0.ClearValue{
+		core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		core1_0.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
 	}
 
 	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
@@ -467,9 +467,9 @@ func main() {
 	renderPassBegin := core1_0.RenderPassBeginOptions{
 		RenderPass:  stencilRenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width / 2, info.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width / 2, info.Height},
 		},
 		ClearValues: clearValues,
 	}
@@ -479,7 +479,7 @@ func main() {
 	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
 	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
-	viewports := []common.Viewport{
+	viewports := []core1_0.Viewport{
 		{
 			X:        0,
 			Y:        0,
@@ -491,10 +491,10 @@ func main() {
 	}
 	info.Cmd.CmdSetViewport(viewports)
 
-	scissors := []common.Rect2D{
+	scissors := []core1_0.Rect2D{
 		{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width / 2, info.Height},
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width / 2, info.Height},
 		},
 	}
 	info.Cmd.CmdSetScissor(scissors)
@@ -681,7 +681,7 @@ func main() {
 		{
 			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {

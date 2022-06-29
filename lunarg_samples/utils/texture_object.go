@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"github.com/CannibalVox/VKng/core/common"
 	"github.com/CannibalVox/VKng/core/core1_0"
 )
 
@@ -9,7 +8,7 @@ type TextureObject struct {
 	Sampler core1_0.Sampler
 
 	Image       core1_0.Image
-	ImageLayout common.ImageLayout
+	ImageLayout core1_0.ImageLayout
 
 	NeedsStaging bool
 	Buffer       core1_0.Buffer

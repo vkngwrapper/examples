@@ -2,7 +2,6 @@ package utils
 
 import (
 	"fmt"
-	"github.com/CannibalVox/VKng/core/common"
 	"github.com/CannibalVox/VKng/core/core1_0"
 	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/cockroachdb/errors"
@@ -14,14 +13,14 @@ import (
 	"unsafe"
 )
 
-func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask common.ImageAspectFlags, oldImageLayout common.ImageLayout, newImageLayout common.ImageLayout, sourceStages common.PipelineStages, destStages common.PipelineStages) error {
+func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask core1_0.ImageAspectFlags, oldImageLayout core1_0.ImageLayout, newImageLayout core1_0.ImageLayout, sourceStages core1_0.PipelineStages, destStages core1_0.PipelineStages) error {
 	imageBarrierOptions := core1_0.ImageMemoryBarrierOptions{
 		OldLayout:           oldImageLayout,
 		NewLayout:           newImageLayout,
 		SrcQueueFamilyIndex: -1,
 		DstQueueFamilyIndex: -1,
 		Image:               image,
-		SubresourceRange: common.ImageSubresourceRange{
+		SubresourceRange: core1_0.ImageSubresourceRange{
 			AspectMask:     aspectMask,
 			BaseMipLevel:   0,
 			LevelCount:     1,
@@ -59,7 +58,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	mappableImage, _, err := i.Device.CreateImage(nil, core1_0.ImageCreateOptions{
 		ImageType: core1_0.ImageType2D,
 		Format:    i.Format,
-		Extent: common.Extent3D{
+		Extent: core1_0.Extent3D{
 			Width:  i.Width,
 			Height: i.Height,
 			Depth:  1,
@@ -116,21 +115,21 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		core1_0.ImageLayoutTransferDstOptimal,
 		[]core1_0.ImageCopy{
 			{
-				SrcSubresource: common.ImageSubresourceLayers{
+				SrcSubresource: core1_0.ImageSubresourceLayers{
 					AspectMask:     core1_0.AspectColor,
 					MipLevel:       0,
 					BaseArrayLayer: 0,
 					LayerCount:     1,
 				},
-				DstSubresource: common.ImageSubresourceLayers{
+				DstSubresource: core1_0.ImageSubresourceLayers{
 					AspectMask:     core1_0.AspectColor,
 					MipLevel:       0,
 					BaseArrayLayer: 0,
 					LayerCount:     1,
 				},
-				SrcOffset: common.Offset3D{0, 0, 0},
-				DstOffset: common.Offset3D{0, 0, 0},
-				Extent:    common.Extent3D{i.Width, i.Height, 1},
+				SrcOffset: core1_0.Offset3D{0, 0, 0},
+				DstOffset: core1_0.Offset3D{0, 0, 0},
+				Extent:    core1_0.Extent3D{i.Width, i.Height, 1},
 			},
 		})
 	if err != nil {
@@ -175,7 +174,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	cmdFence.Destroy(nil)
 
 	filename := fmt.Sprintf("%s.png", baseName)
-	subresourceLayout := mappableImage.SubresourceLayout(&common.ImageSubresource{
+	subresourceLayout := mappableImage.SubresourceLayout(&core1_0.ImageSubresource{
 		AspectMask: core1_0.AspectColor,
 		MipLevel:   0,
 		ArrayLayer: 0,
@@ -267,7 +266,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	return err
 }
 
-func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.ImageUsages, extraFeatures common.FormatFeatures) (*TextureObject, error) {
+func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.ImageUsages, extraFeatures core1_0.FormatFeatures) (*TextureObject, error) {
 	image, _, err := image.Decode(textureReader)
 	if err != nil {
 		return nil, err
@@ -298,7 +297,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	imageOptions := core1_0.ImageCreateOptions{
 		ImageType:   core1_0.ImageType2D,
 		Format:      core1_0.DataFormatR8G8B8A8UnsignedNormalized,
-		Extent:      common.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},
+		Extent:      core1_0.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},
 		MipLevels:   1,
 		ArrayLayers: 1,
 		Samples:     NumSamples,
@@ -320,7 +319,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 
 	memReqs := textureObj.Image.MemoryRequirements()
 
-	var requirements common.MemoryProperties
+	var requirements core1_0.MemoryProperties
 	if !textureObj.NeedsStaging {
 		requirements = core1_0.MemoryPropertyHostVisible | core1_0.MemoryPropertyHostCoherent
 	}
@@ -365,12 +364,12 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 		return nil, err
 	}
 
-	subResource := &common.ImageSubresource{
+	subResource := &core1_0.ImageSubresource{
 		AspectMask: core1_0.AspectColor,
 		MipLevel:   0,
 		ArrayLayer: 0,
 	}
-	layout := &common.SubresourceLayout{}
+	layout := &core1_0.SubresourceLayout{}
 	if !textureObj.NeedsStaging {
 		/* Get the subresource layout so we know what the row pitch is */
 		layout = textureObj.Image.SubresourceLayout(subResource)
@@ -458,14 +457,14 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 				BufferOffset:      0,
 				BufferRowLength:   textureObj.TexWidth,
 				BufferImageHeight: textureObj.TexHeight,
-				ImageSubresource: common.ImageSubresourceLayers{
+				ImageSubresource: core1_0.ImageSubresourceLayers{
 					AspectMask:     core1_0.AspectColor,
 					MipLevel:       0,
 					BaseArrayLayer: 0,
 					LayerCount:     1,
 				},
-				ImageOffset: common.Offset3D{0, 0, 0},
-				ImageExtent: common.Extent3D{textureObj.TexWidth, textureObj.TexHeight, 1},
+				ImageOffset: core1_0.Offset3D{0, 0, 0},
+				ImageExtent: core1_0.Extent3D{textureObj.TexWidth, textureObj.TexHeight, 1},
 			},
 		})
 		if err != nil {
@@ -492,7 +491,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 			B: core1_0.SwizzleBlue,
 			A: core1_0.SwizzleAlpha,
 		},
-		SubresourceRange: common.ImageSubresourceRange{
+		SubresourceRange: core1_0.ImageSubresourceRange{
 			AspectMask:     core1_0.AspectColor,
 			BaseMipLevel:   0,
 			LevelCount:     1,
@@ -503,7 +502,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages common.Image
 	return textureObj, err
 }
 
-func (i *SampleInfo) InitTexture(textureReader io.Reader, extraUsages common.ImageUsages, extraFeatures common.FormatFeatures) error {
+func (i *SampleInfo) InitTexture(textureReader io.Reader, extraUsages core1_0.ImageUsages, extraFeatures core1_0.FormatFeatures) error {
 	/* create image */
 	texObj, err := i.InitImage(textureReader, extraUsages, extraFeatures)
 	if err != nil {

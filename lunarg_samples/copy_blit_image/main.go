@@ -165,7 +165,7 @@ func main() {
 	bltSrcImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateOptions{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
-		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
+		Extent:        core1_0.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
 		MipLevels:     1,
 		ArrayLayers:   1,
 		Samples:       utils.NumSamples,
@@ -214,7 +214,7 @@ func main() {
 	/* Queue the command buffer for execution */
 	_, err = info.GraphicsQueue.SubmitToQueue(cmdFence, []core1_0.SubmitOptions{
 		{
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
@@ -290,23 +290,23 @@ func main() {
 	// Do a 32x32 blit to all of the dst image - should get big squares
 	err = info.Cmd.CmdBlitImage(bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageBlit{
 		{
-			SourceSubresource: common.ImageSubresourceLayers{
+			SourceSubresource: core1_0.ImageSubresourceLayers{
 				AspectMask:     core1_0.AspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
-			SourceOffsets: [2]common.Offset3D{
+			SourceOffsets: [2]core1_0.Offset3D{
 				{X: 0, Y: 0, Z: 0},
 				{X: 32, Y: 32, Z: 1},
 			},
-			DestinationSubresource: common.ImageSubresourceLayers{
+			DestinationSubresource: core1_0.ImageSubresourceLayers{
 				AspectMask:     core1_0.AspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
-			DestinationOffsets: [2]common.Offset3D{
+			DestinationOffsets: [2]core1_0.Offset3D{
 				{X: 0, Y: 0, Z: 0},
 				{X: info.Width, Y: info.Height, Z: 1},
 			},
@@ -326,7 +326,7 @@ func main() {
 			NewLayout:           core1_0.ImageLayoutTransferDstOptimal,
 			SrcQueueFamilyIndex: -1,
 			DstQueueFamilyIndex: -1,
-			SubresourceRange: common.ImageSubresourceRange{
+			SubresourceRange: core1_0.ImageSubresourceRange{
 				AspectMask:     core1_0.AspectColor,
 				BaseMipLevel:   0,
 				LevelCount:     1,
@@ -343,21 +343,21 @@ func main() {
 	// Do a image copy to part of the dst image - checks should stay small
 	err = info.Cmd.CmdCopyImage(bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageCopy{
 		{
-			SrcSubresource: common.ImageSubresourceLayers{
+			SrcSubresource: core1_0.ImageSubresourceLayers{
 				AspectMask:     core1_0.AspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
-			SrcOffset: common.Offset3D{X: 0, Y: 0, Z: 0},
-			DstSubresource: common.ImageSubresourceLayers{
+			SrcOffset: core1_0.Offset3D{X: 0, Y: 0, Z: 0},
+			DstSubresource: core1_0.ImageSubresourceLayers{
 				AspectMask:     core1_0.AspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
-			DstOffset: common.Offset3D{X: 256, Y: 256, Z: 0},
-			Extent:    common.Extent3D{Width: 128, Height: 128, Depth: 1},
+			DstOffset: core1_0.Offset3D{X: 256, Y: 256, Z: 0},
+			Extent:    core1_0.Extent3D{Width: 128, Height: 128, Depth: 1},
 		},
 	})
 	if err != nil {
@@ -372,7 +372,7 @@ func main() {
 			NewLayout:           khr_swapchain.ImageLayoutPresentSrc,
 			SrcQueueFamilyIndex: -1,
 			DstQueueFamilyIndex: -1,
-			SubresourceRange: common.ImageSubresourceRange{
+			SubresourceRange: core1_0.ImageSubresourceRange{
 				AspectMask:     core1_0.AspectColor,
 				BaseMipLevel:   0,
 				LevelCount:     1,

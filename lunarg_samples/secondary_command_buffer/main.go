@@ -293,15 +293,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	viewport := common.Viewport{
+	viewport := core1_0.Viewport{
 		X: 0, Y: 0,
 		MinDepth: 0, MaxDepth: 1,
 		Width: 200, Height: 200,
 	}
 
-	scissor := common.Rect2D{
-		Offset: common.Offset2D{0, 0},
-		Extent: common.Extent2D{info.Width, info.Height},
+	scissor := core1_0.Rect2D{
+		Offset: core1_0.Offset2D{0, 0},
+		Extent: core1_0.Extent2D{info.Width, info.Height},
 	}
 
 	// now we record four separate command buffers, one for each quadrant of the
@@ -335,8 +335,8 @@ func main() {
 
 		viewport.X = 25.0 + 250.0*float32(i%2)
 		viewport.Y = 25.0 + 250.0*float32(i/2)
-		secondaryCmds[i].CmdSetViewport([]common.Viewport{viewport})
-		secondaryCmds[i].CmdSetScissor([]common.Rect2D{scissor})
+		secondaryCmds[i].CmdSetViewport([]core1_0.Viewport{viewport})
+		secondaryCmds[i].CmdSetScissor([]core1_0.Rect2D{scissor})
 
 		secondaryCmds[i].CmdDraw(36, 1, 0, 0)
 		_, err = secondaryCmds[i].End()
@@ -351,13 +351,13 @@ func main() {
 	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width, info.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width, info.Height},
 		},
-		ClearValues: []common.ClearValue{
-			common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-			common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
+		ClearValues: []core1_0.ClearValue{
+			core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+			core1_0.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 		},
 	})
 	if err != nil {
@@ -383,7 +383,7 @@ func main() {
 		{
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {

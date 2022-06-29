@@ -138,7 +138,7 @@ func main() {
 	inputImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateOptions{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
-		Extent:        common.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
+		Extent:        core1_0.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
 		MipLevels:     1,
 		ArrayLayers:   1,
 		Samples:       utils.NumSamples,
@@ -177,7 +177,7 @@ func main() {
 	}
 
 	// Clear the input attachment image to yellow
-	info.Cmd.CmdClearColorImage(inputImage, core1_0.ImageLayoutTransferDstOptimal, &common.ClearValueFloat{1, 1, 0, 0}, []common.ImageSubresourceRange{
+	info.Cmd.CmdClearColorImage(inputImage, core1_0.ImageLayoutTransferDstOptimal, &core1_0.ClearValueFloat{1, 1, 0, 0}, []core1_0.ImageSubresourceRange{
 		{
 			AspectMask:     core1_0.AspectColor,
 			BaseMipLevel:   0,
@@ -203,7 +203,7 @@ func main() {
 			B: core1_0.SwizzleBlue,
 			A: core1_0.SwizzleAlpha,
 		},
-		SubresourceRange: common.ImageSubresourceRange{
+		SubresourceRange: core1_0.ImageSubresourceRange{
 			AspectMask:     core1_0.AspectColor,
 			BaseMipLevel:   0,
 			LevelCount:     1,
@@ -267,13 +267,13 @@ func main() {
 		},
 	}
 
-	colorRef := common.AttachmentReference{AttachmentIndex: 0, Layout: core1_0.ImageLayoutColorAttachmentOptimal}
-	inputRef := common.AttachmentReference{AttachmentIndex: 1, Layout: core1_0.ImageLayoutShaderReadOnlyOptimal}
+	colorRef := core1_0.AttachmentReference{AttachmentIndex: 0, Layout: core1_0.ImageLayoutColorAttachmentOptimal}
+	inputRef := core1_0.AttachmentReference{AttachmentIndex: 1, Layout: core1_0.ImageLayoutShaderReadOnlyOptimal}
 
 	subpass := core1_0.SubPassDescription{
 		BindPoint:        core1_0.BindGraphics,
-		InputAttachments: []common.AttachmentReference{inputRef},
-		ColorAttachments: []common.AttachmentReference{colorRef},
+		InputAttachments: []core1_0.AttachmentReference{inputRef},
+		ColorAttachments: []core1_0.AttachmentReference{colorRef},
 	}
 
 	subpassDependency := core1_0.SubPassDependency{
@@ -388,12 +388,12 @@ func main() {
 	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{X: 0, Y: 0},
-			Extent: common.Extent2D{Width: info.Width, Height: info.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{X: 0, Y: 0},
+			Extent: core1_0.Extent2D{Width: info.Width, Height: info.Height},
 		},
-		ClearValues: []common.ClearValue{
-			common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		ClearValues: []core1_0.ClearValue{
+			core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
 		},
 	})
 	if err != nil {

@@ -318,9 +318,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	clearValues := []common.ClearValue{
-		common.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
-		common.ClearValueDepthStencil{Depth: 1, Stencil: 0},
+	clearValues := []core1_0.ClearValue{
+		core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
+		core1_0.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
 	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
@@ -339,9 +339,9 @@ func main() {
 	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width, info.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width, info.Height},
 		},
 		ClearValues: clearValues,
 	})
@@ -381,7 +381,7 @@ func main() {
 		{
 			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {

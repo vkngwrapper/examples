@@ -243,7 +243,7 @@ func main() {
 		//
 
 		var headerLength, vendorID, deviceID uint32
-		var cacheHeaderVersion common.PipelineCacheHeaderVersion
+		var cacheHeaderVersion core1_0.PipelineCacheHeaderVersion
 		pipelineReader := bytes.NewReader(pipelineData)
 
 		err = binary.Read(pipelineReader, common.ByteOrder, &headerLength)
@@ -280,7 +280,7 @@ func main() {
 			fmt.Printf("    Cache contains: 0x%x", headerLength)
 		}
 
-		if cacheHeaderVersion != common.PipelineCacheHeaderVersion1 {
+		if cacheHeaderVersion != core1_0.PipelineCacheHeaderVersion1 {
 			badCache = true
 			fmt.Printf("  Unsupported cache header version in %s.\n", fileName)
 			fmt.Printf("    Cache contains: 0x%x", cacheHeaderVersion)

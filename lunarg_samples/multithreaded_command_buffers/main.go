@@ -237,7 +237,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	srRange := common.ImageSubresourceRange{
+	srRange := core1_0.ImageSubresourceRange{
 		AspectMask:     core1_0.AspectColor,
 		BaseMipLevel:   0,
 		LevelCount:     1,
@@ -245,7 +245,7 @@ func main() {
 		LayerCount:     1,
 	}
 
-	clearColor := common.ClearValueFloat{0.2, 0.2, 0.2, 0.2}
+	clearColor := core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2}
 
 	/* We need to do the clear here instead of as a load op since all 3 threads
 	 * share the same pipeline / renderpass */
@@ -253,7 +253,7 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Cmd.CmdClearColorImage(info.Buffers[info.CurrentBuffer].Image, core1_0.ImageLayoutTransferDstOptimal, clearColor, []common.ImageSubresourceRange{srRange})
+	info.Cmd.CmdClearColorImage(info.Buffers[info.CurrentBuffer].Image, core1_0.ImageLayoutTransferDstOptimal, clearColor, []core1_0.ImageSubresourceRange{srRange})
 	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutTransferDstOptimal, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.PipelineStageTransfer, core1_0.PipelineStageColorAttachmentOutput)
 	if err != nil {
 		log.Fatalln(err)
@@ -273,7 +273,7 @@ func main() {
 	_, err = info.GraphicsQueue.SubmitToQueue(clearFence, []core1_0.SubmitOptions{
 		{
 			WaitSemaphores: []core1_0.Semaphore{info.ImageAcquiredSemaphore},
-			WaitDstStages:  []common.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
 	})
@@ -320,7 +320,7 @@ func main() {
 				NewLayout:           khr_swapchain.ImageLayoutPresentSrc,
 				SrcQueueFamilyIndex: -1,
 				DstQueueFamilyIndex: -1,
-				SubresourceRange: common.ImageSubresourceRange{
+				SubresourceRange: core1_0.ImageSubresourceRange{
 					AspectMask:     core1_0.AspectColor,
 					BaseMipLevel:   0,
 					LevelCount:     1,
@@ -496,9 +496,9 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	err = buffers[0].CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
-		RenderArea: common.Rect2D{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width, info.Height},
+		RenderArea: core1_0.Rect2D{
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width, info.Height},
 		},
 	})
 	if err != nil {
@@ -507,7 +507,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 
 	buffers[0].CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
 	buffers[0].CmdBindVertexBuffers([]core1_0.Buffer{vertexBuffer}, []int{0})
-	buffers[0].CmdSetViewport([]common.Viewport{
+	buffers[0].CmdSetViewport([]core1_0.Viewport{
 		{
 			X: 0, Y: 0,
 			MinDepth: 0, MaxDepth: 1,
@@ -515,10 +515,10 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 			Height: float32(info.Height),
 		},
 	})
-	buffers[0].CmdSetScissor([]common.Rect2D{
+	buffers[0].CmdSetScissor([]core1_0.Rect2D{
 		{
-			Offset: common.Offset2D{0, 0},
-			Extent: common.Extent2D{info.Width, info.Height},
+			Offset: core1_0.Offset2D{0, 0},
+			Extent: core1_0.Extent2D{info.Width, info.Height},
 		},
 	})
 
