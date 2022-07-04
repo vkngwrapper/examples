@@ -189,7 +189,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 		VulkanVersion:      common.Vulkan1_0,
 		ExtensionNames:     i.InstanceExtensionNames,
 		LayerNames:         i.InstanceLayerNames,
-		HaveNext: common.HaveNext{
+		NextOptions: common.NextOptions{
 			Next: next,
 		},
 	})
