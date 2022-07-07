@@ -20,7 +20,7 @@ import (
 //go:embed shaders
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	return false
 }
@@ -81,10 +81,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Occlusion Query", debugOptions)
@@ -93,7 +93,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -210,7 +210,7 @@ func main() {
 		core1_0.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -222,10 +222,10 @@ func main() {
 	}
 
 	/* Allocate a uniform buffer that will take query results. */
-	queryResultBuf, _, err := info.Device.CreateBuffer(nil, core1_0.BufferCreateOptions{
-		BufferSize:  4 * int(unsafe.Sizeof(uint64(0))),
+	queryResultBuf, _, err := info.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
+		Size:        4 * int(unsafe.Sizeof(uint64(0))),
 		Usage:       core1_0.BufferUsageUniformBuffer | core1_0.BufferUsageTransferDst,
-		SharingMode: core1_0.SharingExclusive,
+		SharingMode: core1_0.SharingModeExclusive,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -233,12 +233,12 @@ func main() {
 
 	memReqs := queryResultBuf.MemoryRequirements()
 
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	queryResultMem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	queryResultMem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -251,7 +251,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	queryPool, _, err := info.Device.CreateQueryPool(nil, core1_0.QueryPoolCreateOptions{
+	queryPool, _, err := info.Device.CreateQueryPool(nil, core1_0.QueryPoolCreateInfo{
 		QueryType:  core1_0.QueryTypeOcclusion,
 		QueryCount: 2,
 	})
@@ -261,7 +261,7 @@ func main() {
 
 	info.Cmd.CmdResetQueryPool(queryPool, 0, 2)
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -274,8 +274,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, nil)
 
 	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
@@ -311,24 +311,24 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
+	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
 		{
-			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
-			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
-			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
+			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
+			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
+			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
 		},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	_, err = info.GraphicsQueue.WaitForIdle()
+	_, err = info.GraphicsQueue.WaitIdle()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -351,7 +351,7 @@ func main() {
 	fmt.Printf("samplesPassed[1] = %d\n", samplesPassed[1])
 
 	/* Read back query result from buffer */
-	samplesPassedPtr, _, err := queryResultMem.MapMemory(0, memReqs.Size, 0)
+	samplesPassedPtr, _, err := queryResultMem.Map(0, memReqs.Size, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -361,7 +361,7 @@ func main() {
 	fmt.Printf("samplesPassed[0] = %d\n", samplesPassedBuffer[0])
 	fmt.Printf("samplesPassed[1] = %d\n", samplesPassedBuffer[1])
 
-	queryResultMem.UnmapMemory()
+	queryResultMem.Unmap()
 
 	/* Now present the image in the window */
 
@@ -377,12 +377,12 @@ func main() {
 		}
 	}
 
-	_, err = info.PresentQueue.WaitForIdle()
+	_, err = info.PresentQueue.WaitIdle()
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.QueuePresent(info.PresentQueue, khr_swapchain.PresentInfo{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

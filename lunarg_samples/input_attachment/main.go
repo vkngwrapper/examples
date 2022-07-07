@@ -17,7 +17,7 @@ import (
 //go:embed shaders
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	log.Println()
@@ -63,10 +63,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Input Attachment Sample", debugOptions)
@@ -75,7 +75,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -85,9 +85,9 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	props := info.Gpus[0].FormatProperties(core1_0.DataFormatR8G8B8A8UnsignedNormalized)
+	props := info.Gpus[0].FormatProperties(core1_0.FormatR8G8B8A8UnsignedNormalized)
 	if (props.OptimalTilingFeatures & core1_0.FormatFeatureColorAttachment) == 0 {
-		log.Fatalf("%s format unsupported for input attachment\n", core1_0.DataFormatR8G8B8A8UnsignedNormalized)
+		log.Fatalf("%s format unsupported for input attachment\n", core1_0.FormatR8G8B8A8UnsignedNormalized)
 	}
 
 	err = info.InitSwapchainExtension()
@@ -145,19 +145,19 @@ func main() {
 		Tiling:        core1_0.ImageTilingOptimal,
 		InitialLayout: core1_0.ImageLayoutUndefined,
 		Usage:         core1_0.ImageUsageInputAttachment | core1_0.ImageUsageTransferDst,
-		SharingMode:   core1_0.SharingExclusive,
+		SharingMode:   core1_0.SharingModeExclusive,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	memReqs := inputImage.MemoryRequirements()
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, 0)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryTypeBits, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	inputMemory, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	inputMemory, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -171,7 +171,7 @@ func main() {
 	}
 
 	// Set the image layout to TRANSFER_DST_OPTIMAL to be ready for clear
-	err = info.SetImageLayout(inputImage, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
+	err = info.SetImageLayout(inputImage, core1_0.ImageAspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -179,7 +179,7 @@ func main() {
 	// Clear the input attachment image to yellow
 	info.Cmd.CmdClearColorImage(inputImage, core1_0.ImageLayoutTransferDstOptimal, &core1_0.ClearValueFloat{1, 1, 0, 0}, []core1_0.ImageSubresourceRange{
 		{
-			AspectMask:     core1_0.AspectColor,
+			AspectMask:     core1_0.ImageAspectColor,
 			BaseMipLevel:   0,
 			LevelCount:     -1,
 			BaseArrayLayer: 0,
@@ -188,23 +188,23 @@ func main() {
 	})
 
 	// Set the image layout to SHADER_READONLY_OPTIMAL for use by the shaders
-	err = info.SetImageLayout(inputImage, core1_0.AspectColor, core1_0.ImageLayoutTransferDstOptimal, core1_0.ImageLayoutShaderReadOnlyOptimal, core1_0.PipelineStageTransfer, core1_0.PipelineStageFragmentShader)
+	err = info.SetImageLayout(inputImage, core1_0.ImageAspectColor, core1_0.ImageLayoutTransferDstOptimal, core1_0.ImageLayoutShaderReadOnlyOptimal, core1_0.PipelineStageTransfer, core1_0.PipelineStageFragmentShader)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	inputAttachmentView, _, err := info.Device.CreateImageView(nil, core1_0.ImageViewCreateOptions{
+	inputAttachmentView, _, err := info.Device.CreateImageView(nil, core1_0.ImageViewCreateInfo{
 		Image:    inputImage,
-		ViewType: core1_0.ViewType2D,
+		ViewType: core1_0.ImageViewType2D,
 		Format:   info.Format,
 		Components: core1_0.ComponentMapping{
-			R: core1_0.SwizzleRed,
-			G: core1_0.SwizzleGreen,
-			B: core1_0.SwizzleBlue,
-			A: core1_0.SwizzleAlpha,
+			R: core1_0.ComponentSwizzleRed,
+			G: core1_0.ComponentSwizzleGreen,
+			B: core1_0.ComponentSwizzleBlue,
+			A: core1_0.ComponentSwizzleAlpha,
 		},
 		SubresourceRange: core1_0.ImageSubresourceRange{
-			AspectMask:     core1_0.AspectColor,
+			AspectMask:     core1_0.ImageAspectColor,
 			BaseMipLevel:   0,
 			LevelCount:     1,
 			BaseArrayLayer: 0,
@@ -215,11 +215,11 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	descLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateOptions{
-		Bindings: []core1_0.DescriptorLayoutBinding{
+	descLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
+		Bindings: []core1_0.DescriptorSetLayoutBinding{
 			{
 				Binding:         0,
-				DescriptorType:  core1_0.DescriptorInputAttachment,
+				DescriptorType:  core1_0.DescriptorTypeInputAttachment,
 				DescriptorCount: 1,
 				StageFlags:      core1_0.StageFragment,
 			},
@@ -230,7 +230,7 @@ func main() {
 	}
 	info.DescLayout = []core1_0.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateOptions{
+	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
@@ -244,10 +244,10 @@ func main() {
 		{
 			Format:         info.Format,
 			Samples:        core1_0.Samples1,
-			LoadOp:         core1_0.LoadOpClear,
-			StoreOp:        core1_0.StoreOpStore,
-			StencilLoadOp:  core1_0.LoadOpDontCare,
-			StencilStoreOp: core1_0.StoreOpDontCare,
+			LoadOp:         core1_0.AttachmentLoadOpClear,
+			StoreOp:        core1_0.AttachmentStoreOpStore,
+			StencilLoadOp:  core1_0.AttachmentLoadOpDontCare,
+			StencilStoreOp: core1_0.AttachmentStoreOpDontCare,
 			InitialLayout:  core1_0.ImageLayoutUndefined,
 			FinalLayout:    khr_swapchain.ImageLayoutPresentSrc,
 		},
@@ -258,37 +258,37 @@ func main() {
 		{
 			Format:         info.Format,
 			Samples:        core1_0.Samples1,
-			LoadOp:         core1_0.LoadOpLoad,
-			StoreOp:        core1_0.StoreOpDontCare,
-			StencilLoadOp:  core1_0.LoadOpDontCare,
-			StencilStoreOp: core1_0.StoreOpDontCare,
+			LoadOp:         core1_0.AttachmentLoadOpLoad,
+			StoreOp:        core1_0.AttachmentStoreOpDontCare,
+			StencilLoadOp:  core1_0.AttachmentLoadOpDontCare,
+			StencilStoreOp: core1_0.AttachmentStoreOpDontCare,
 			InitialLayout:  core1_0.ImageLayoutShaderReadOnlyOptimal,
 			FinalLayout:    core1_0.ImageLayoutShaderReadOnlyOptimal,
 		},
 	}
 
-	colorRef := core1_0.AttachmentReference{AttachmentIndex: 0, Layout: core1_0.ImageLayoutColorAttachmentOptimal}
-	inputRef := core1_0.AttachmentReference{AttachmentIndex: 1, Layout: core1_0.ImageLayoutShaderReadOnlyOptimal}
+	colorRef := core1_0.AttachmentReference{Attachment: 0, Layout: core1_0.ImageLayoutColorAttachmentOptimal}
+	inputRef := core1_0.AttachmentReference{Attachment: 1, Layout: core1_0.ImageLayoutShaderReadOnlyOptimal}
 
-	subpass := core1_0.SubPassDescription{
-		BindPoint:        core1_0.BindGraphics,
-		InputAttachments: []core1_0.AttachmentReference{inputRef},
-		ColorAttachments: []core1_0.AttachmentReference{colorRef},
+	subpass := core1_0.SubpassDescription{
+		PipelineBindPoint: core1_0.PipelineBindPointGraphics,
+		InputAttachments:  []core1_0.AttachmentReference{inputRef},
+		ColorAttachments:  []core1_0.AttachmentReference{colorRef},
 	}
 
-	subpassDependency := core1_0.SubPassDependency{
-		SrcSubPassIndex: core1_0.SubpassExternal,
-		DstSubPassIndex: 0,
-		SrcStageMask:    core1_0.PipelineStageColorAttachmentOutput,
-		DstStageMask:    core1_0.PipelineStageColorAttachmentOutput,
-		SrcAccessMask:   0,
-		DstAccessMask:   core1_0.AccessColorAttachmentWrite,
+	subpassDependency := core1_0.SubpassDependency{
+		SrcSubpass:    core1_0.SubpassExternal,
+		DstSubpass:    0,
+		SrcStageMask:  core1_0.PipelineStageColorAttachmentOutput,
+		DstStageMask:  core1_0.PipelineStageColorAttachmentOutput,
+		SrcAccessMask: 0,
+		DstAccessMask: core1_0.AccessColorAttachmentWrite,
 	}
 
-	info.RenderPass, _, err = info.Device.CreateRenderPass(nil, core1_0.RenderPassCreateOptions{
+	info.RenderPass, _, err = info.Device.CreateRenderPass(nil, core1_0.RenderPassCreateInfo{
 		Attachments:         attachments,
-		SubPassDescriptions: []core1_0.SubPassDescription{subpass},
-		SubPassDependencies: []core1_0.SubPassDependency{subpassDependency},
+		Subpasses:           []core1_0.SubpassDescription{subpass},
+		SubpassDependencies: []core1_0.SubpassDependency{subpassDependency},
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -310,7 +310,7 @@ func main() {
 	}
 
 	for i := 0; i < info.SwapchainImageCount; i++ {
-		framebuffer, _, err := info.Device.CreateFramebuffer(nil, core1_0.FramebufferCreateOptions{
+		framebuffer, _, err := info.Device.CreateFramebuffer(nil, core1_0.FramebufferCreateInfo{
 			RenderPass:  info.RenderPass,
 			Attachments: []core1_0.ImageView{info.Buffers[i].View, inputAttachmentView},
 			Width:       info.Width,
@@ -323,11 +323,11 @@ func main() {
 		info.Framebuffer = append(info.Framebuffer, framebuffer)
 	}
 
-	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateOptions{
+	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets: 1,
-		PoolSizes: []core1_0.PoolSize{
+		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
-				Type:            core1_0.DescriptorInputAttachment,
+				Type:            core1_0.DescriptorTypeInputAttachment,
 				DescriptorCount: 1,
 			},
 		},
@@ -336,20 +336,20 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
-		DescriptorPool:    info.DescPool,
-		AllocationLayouts: []core1_0.DescriptorSetLayout{descLayout},
+	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+		DescriptorPool: info.DescPool,
+		SetLayouts:     []core1_0.DescriptorSetLayout{descLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
-			DescriptorType:  core1_0.DescriptorInputAttachment,
+			DescriptorType:  core1_0.DescriptorTypeInputAttachment,
 			ImageInfo: []core1_0.DescriptorImageInfo{
 				{
 					ImageLayout: core1_0.ImageLayoutShaderReadOnlyOptimal,
@@ -372,7 +372,7 @@ func main() {
 	}
 
 	// Color attachment clear to gray
-	info.ImageAcquiredSemaphore, _, err = info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
+	info.ImageAcquiredSemaphore, _, err = info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -385,7 +385,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -399,8 +399,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, nil)
 
 	info.InitViewports()
 	info.InitScissors()
@@ -415,7 +415,7 @@ func main() {
 
 	/* VULKAN_KEY_END */
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}

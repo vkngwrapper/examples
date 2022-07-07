@@ -13,8 +13,8 @@ import (
 	"unsafe"
 )
 
-func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask core1_0.ImageAspectFlags, oldImageLayout core1_0.ImageLayout, newImageLayout core1_0.ImageLayout, sourceStages core1_0.PipelineStages, destStages core1_0.PipelineStages) error {
-	imageBarrierOptions := core1_0.ImageMemoryBarrierOptions{
+func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask core1_0.ImageAspectFlags, oldImageLayout core1_0.ImageLayout, newImageLayout core1_0.ImageLayout, sourceStages core1_0.PipelineStageFlags, destStages core1_0.PipelineStageFlags) error {
+	imageBarrierOptions := core1_0.ImageMemoryBarrier{
 		OldLayout:           oldImageLayout,
 		NewLayout:           newImageLayout,
 		SrcQueueFamilyIndex: -1,
@@ -51,7 +51,7 @@ func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask core1_0.Imag
 		imageBarrierOptions.DstAccessMask = core1_0.AccessDepthStencilAttachmentWrite
 	}
 
-	return i.Cmd.CmdPipelineBarrier(sourceStages, destStages, 0, nil, nil, []core1_0.ImageMemoryBarrierOptions{imageBarrierOptions})
+	return i.Cmd.CmdPipelineBarrier(sourceStages, destStages, 0, nil, nil, []core1_0.ImageMemoryBarrier{imageBarrierOptions})
 }
 
 func (i *SampleInfo) WritePNG(baseName string) error {
@@ -68,7 +68,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		Samples:       core1_0.Samples1,
 		Tiling:        core1_0.ImageTilingLinear,
 		Usage:         core1_0.ImageUsageTransferDst,
-		SharingMode:   core1_0.SharingExclusive,
+		SharingMode:   core1_0.SharingModeExclusive,
 		InitialLayout: core1_0.ImageLayoutUndefined,
 	})
 	if err != nil {
@@ -76,12 +76,12 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 	}
 
 	memReqs := mappableImage.MemoryRequirements()
-	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
+	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		return err
 	}
 
-	mappableMemory, _, err := i.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	mappableMemory, _, err := i.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -94,17 +94,17 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	_, err = i.Cmd.Begin(core1_0.BeginOptions{})
+	_, err = i.Cmd.Begin(core1_0.CommandBufferBeginInfo{})
 	if err != nil {
 		return err
 	}
 
-	err = i.SetImageLayout(mappableImage, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
+	err = i.SetImageLayout(mappableImage, core1_0.ImageAspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
 	if err != nil {
 		return err
 	}
 
-	err = i.SetImageLayout(i.Buffers[i.CurrentBuffer].Image, core1_0.AspectColor, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutTransferSrcOptimal, core1_0.PipelineStageBottomOfPipe, core1_0.PipelineStageTransfer)
+	err = i.SetImageLayout(i.Buffers[i.CurrentBuffer].Image, core1_0.ImageAspectColor, khr_swapchain.ImageLayoutPresentSrc, core1_0.ImageLayoutTransferSrcOptimal, core1_0.PipelineStageBottomOfPipe, core1_0.PipelineStageTransfer)
 	if err != nil {
 		return err
 	}
@@ -116,13 +116,13 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		[]core1_0.ImageCopy{
 			{
 				SrcSubresource: core1_0.ImageSubresourceLayers{
-					AspectMask:     core1_0.AspectColor,
+					AspectMask:     core1_0.ImageAspectColor,
 					MipLevel:       0,
 					BaseArrayLayer: 0,
 					LayerCount:     1,
 				},
 				DstSubresource: core1_0.ImageSubresourceLayers{
-					AspectMask:     core1_0.AspectColor,
+					AspectMask:     core1_0.ImageAspectColor,
 					MipLevel:       0,
 					BaseArrayLayer: 0,
 					LayerCount:     1,
@@ -136,7 +136,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	err = i.SetImageLayout(mappableImage, core1_0.AspectColor, core1_0.ImageLayoutTransferDstOptimal, core1_0.ImageLayoutGeneral, core1_0.PipelineStageTransfer, core1_0.PipelineStageHost)
+	err = i.SetImageLayout(mappableImage, core1_0.ImageAspectColor, core1_0.ImageLayoutTransferDstOptimal, core1_0.ImageLayoutGeneral, core1_0.PipelineStageTransfer, core1_0.PipelineStageHost)
 	if err != nil {
 		return err
 	}
@@ -146,12 +146,12 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		return err
 	}
 
-	cmdFence, _, err := i.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	cmdFence, _, err := i.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		return err
 	}
 
-	_, err = i.GraphicsQueue.SubmitToQueue(cmdFence, []core1_0.SubmitOptions{
+	_, err = i.GraphicsQueue.Submit(cmdFence, []core1_0.SubmitInfo{
 		{
 			CommandBuffers: []core1_0.CommandBuffer{i.Cmd},
 		},
@@ -175,12 +175,12 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 
 	filename := fmt.Sprintf("%s.png", baseName)
 	subresourceLayout := mappableImage.SubresourceLayout(&core1_0.ImageSubresource{
-		AspectMask: core1_0.AspectColor,
+		AspectMask: core1_0.ImageAspectColor,
 		MipLevel:   0,
 		ArrayLayer: 0,
 	})
 
-	memPtr, _, err := mappableMemory.MapMemory(0, memReqs.Size, 0)
+	memPtr, _, err := mappableMemory.Map(0, memReqs.Size, 0)
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 
 	for y := 0; y < i.Height; y++ {
 		rowIndex := bufferIndex
-		if i.Format == core1_0.DataFormatB8G8R8A8UnsignedNormalized || i.Format == core1_0.DataFormatB8G8R8A8SRGB {
+		if i.Format == core1_0.FormatB8G8R8A8UnsignedNormalized || i.Format == core1_0.FormatB8G8R8A8SRGB {
 			for x := 0; x < i.Width; x++ {
 				outImg.Set(x, y, color.RGBA{
 					B: dataBuffer[rowIndex],
@@ -205,7 +205,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 				})
 				rowIndex += 4
 			}
-		} else if i.Format == core1_0.DataFormatR8G8B8A8UnsignedNormalized {
+		} else if i.Format == core1_0.FormatR8G8B8A8UnsignedNormalized {
 			for x := 0; x < i.Width; x++ {
 				outImg.Set(x, y, color.RGBA{
 					R: dataBuffer[rowIndex],
@@ -221,7 +221,7 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 		bufferIndex += subresourceLayout.RowPitch
 	}
 
-	mappableMemory.UnmapMemory()
+	mappableMemory.Unmap()
 	mappableImage.Destroy(nil)
 	mappableMemory.Free(nil)
 
@@ -235,10 +235,10 @@ func (i *SampleInfo) WritePNG(baseName string) error {
 
 func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	var err error
-	textureObj.Buffer, _, err = i.Device.CreateBuffer(nil, core1_0.BufferCreateOptions{
-		BufferSize:  textureObj.TexWidth * textureObj.TexHeight * 4,
+	textureObj.Buffer, _, err = i.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
+		Size:        textureObj.TexWidth * textureObj.TexHeight * 4,
 		Usage:       core1_0.BufferUsageTransferSrc,
-		SharingMode: core1_0.SharingExclusive,
+		SharingMode: core1_0.SharingModeExclusive,
 	})
 	if err != nil {
 		return err
@@ -248,13 +248,13 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	textureObj.BufferSize = memReqs.Size
 
 	requirements := core1_0.MemoryPropertyHostVisible | core1_0.MemoryPropertyHostCoherent
-	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, requirements)
+	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryTypeBits, requirements)
 	if err != nil {
 		return err
 	}
 
 	/* allocate memory */
-	textureObj.BufferMemory, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	textureObj.BufferMemory, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -266,7 +266,7 @@ func (i *SampleInfo) InitTextureBuffer(textureObj *TextureObject) error {
 	return err
 }
 
-func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.ImageUsages, extraFeatures core1_0.FormatFeatures) (*TextureObject, error) {
+func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.ImageUsageFlags, extraFeatures core1_0.FormatFeatureFlags) (*TextureObject, error) {
 	image, _, err := image.Decode(textureReader)
 	if err != nil {
 		return nil, err
@@ -276,7 +276,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 	textureObj.TexWidth = image.Bounds().Size().X
 	textureObj.TexHeight = image.Bounds().Size().Y
 
-	formatProps := i.Gpus[0].FormatProperties(core1_0.DataFormatR8G8B8A8UnsignedNormalized)
+	formatProps := i.Gpus[0].FormatProperties(core1_0.FormatR8G8B8A8UnsignedNormalized)
 
 	/* See if we can use a linear tiled image for a texture, if not, we will
 	 * need a staging buffer for the texture data */
@@ -285,7 +285,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 
 	if textureObj.NeedsStaging {
 		if (formatProps.OptimalTilingFeatures & allFeatures) != allFeatures {
-			return nil, errors.Newf("Format %s cannot support featureset %s\n", core1_0.DataFormatR8G8B8A8UnsignedNormalized, allFeatures)
+			return nil, errors.Newf("Format %s cannot support featureset %s\n", core1_0.FormatR8G8B8A8UnsignedNormalized, allFeatures)
 		}
 		err = i.InitTextureBuffer(textureObj)
 		if err != nil {
@@ -296,13 +296,13 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 
 	imageOptions := core1_0.ImageCreateOptions{
 		ImageType:   core1_0.ImageType2D,
-		Format:      core1_0.DataFormatR8G8B8A8UnsignedNormalized,
+		Format:      core1_0.FormatR8G8B8A8UnsignedNormalized,
 		Extent:      core1_0.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},
 		MipLevels:   1,
 		ArrayLayers: 1,
 		Samples:     NumSamples,
 		Usage:       core1_0.ImageUsageSampled | extraUsages,
-		SharingMode: core1_0.SharingExclusive,
+		SharingMode: core1_0.SharingModeExclusive,
 	}
 	if textureObj.NeedsStaging {
 		imageOptions.Tiling = core1_0.ImageTilingOptimal
@@ -319,18 +319,18 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 
 	memReqs := textureObj.Image.MemoryRequirements()
 
-	var requirements core1_0.MemoryProperties
+	var requirements core1_0.MemoryPropertyFlags
 	if !textureObj.NeedsStaging {
 		requirements = core1_0.MemoryPropertyHostVisible | core1_0.MemoryPropertyHostCoherent
 	}
 
-	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryType, requirements)
+	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryTypeBits, requirements)
 	if err != nil {
 		return nil, err
 	}
 
 	/* allocate memory */
-	textureObj.ImageMemory, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	textureObj.ImageMemory, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -349,13 +349,13 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 		return nil, err
 	}
 
-	cmdFence, _, err := i.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	cmdFence, _, err := i.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		return nil, err
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = i.GraphicsQueue.SubmitToQueue(cmdFence, []core1_0.SubmitOptions{
+	_, err = i.GraphicsQueue.Submit(cmdFence, []core1_0.SubmitInfo{
 		{
 			CommandBuffers: []core1_0.CommandBuffer{i.Cmd},
 		},
@@ -365,7 +365,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 	}
 
 	subResource := &core1_0.ImageSubresource{
-		AspectMask: core1_0.AspectColor,
+		AspectMask: core1_0.ImageAspectColor,
 		MipLevel:   0,
 		ArrayLayer: 0,
 	}
@@ -392,10 +392,10 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 	var dataPtr unsafe.Pointer
 	var data []byte
 	if textureObj.NeedsStaging {
-		dataPtr, _, err = textureObj.BufferMemory.MapMemory(0, textureObj.BufferSize, 0)
+		dataPtr, _, err = textureObj.BufferMemory.Map(0, textureObj.BufferSize, 0)
 		data = ([]byte)(unsafe.Slice((*byte)(dataPtr), textureObj.BufferSize))
 	} else {
-		dataPtr, _, err = textureObj.ImageMemory.MapMemory(0, memReqs.Size, 0)
+		dataPtr, _, err = textureObj.ImageMemory.Map(0, memReqs.Size, 0)
 		data = ([]byte)(unsafe.Slice((*byte)(dataPtr), memReqs.Size))
 	}
 	if err != nil {
@@ -422,16 +422,16 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 	}
 
 	if textureObj.NeedsStaging {
-		textureObj.BufferMemory.UnmapMemory()
+		textureObj.BufferMemory.Unmap()
 	} else {
-		textureObj.ImageMemory.UnmapMemory()
+		textureObj.ImageMemory.Unmap()
 	}
 
 	_, err = i.Cmd.Reset(0)
 	if err != nil {
 		return nil, err
 	}
-	_, err = i.Cmd.Begin(core1_0.BeginOptions{})
+	_, err = i.Cmd.Begin(core1_0.CommandBufferBeginInfo{})
 	if err != nil {
 		return nil, err
 	}
@@ -439,14 +439,14 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 	if !textureObj.NeedsStaging {
 		/* If we can use the linear tiled image as a texture, just do it */
 		textureObj.ImageLayout = core1_0.ImageLayoutShaderReadOnlyOptimal
-		err = i.SetImageLayout(textureObj.Image, core1_0.AspectColor, core1_0.ImageLayoutPreInitialized, textureObj.ImageLayout, core1_0.PipelineStageHost, core1_0.PipelineStageFragmentShader)
+		err = i.SetImageLayout(textureObj.Image, core1_0.ImageAspectColor, core1_0.ImageLayoutPreInitialized, textureObj.ImageLayout, core1_0.PipelineStageHost, core1_0.PipelineStageFragmentShader)
 		if err != nil {
 			return nil, err
 		}
 	} else {
 		/* Since we're going to blit to the texture image, set its layout to
 		 * DESTINATION_OPTIMAL */
-		err = i.SetImageLayout(textureObj.Image, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
+		err = i.SetImageLayout(textureObj.Image, core1_0.ImageAspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
 		if err != nil {
 			return nil, err
 		}
@@ -458,7 +458,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 				BufferRowLength:   textureObj.TexWidth,
 				BufferImageHeight: textureObj.TexHeight,
 				ImageSubresource: core1_0.ImageSubresourceLayers{
-					AspectMask:     core1_0.AspectColor,
+					AspectMask:     core1_0.ImageAspectColor,
 					MipLevel:       0,
 					BaseArrayLayer: 0,
 					LayerCount:     1,
@@ -474,25 +474,25 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 		/* Set the layout for the texture image from DESTINATION_OPTIMAL to
 		 * SHADER_READ_ONLY */
 		textureObj.ImageLayout = core1_0.ImageLayoutShaderReadOnlyOptimal
-		err = i.SetImageLayout(textureObj.Image, core1_0.AspectColor, core1_0.ImageLayoutTransferDstOptimal, textureObj.ImageLayout, core1_0.PipelineStageTransfer, core1_0.PipelineStageFragmentShader)
+		err = i.SetImageLayout(textureObj.Image, core1_0.ImageAspectColor, core1_0.ImageLayoutTransferDstOptimal, textureObj.ImageLayout, core1_0.PipelineStageTransfer, core1_0.PipelineStageFragmentShader)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	/* create image view */
-	textureObj.View, _, err = i.Device.CreateImageView(nil, core1_0.ImageViewCreateOptions{
+	textureObj.View, _, err = i.Device.CreateImageView(nil, core1_0.ImageViewCreateInfo{
 		Image:    textureObj.Image,
-		ViewType: core1_0.ViewType2D,
-		Format:   core1_0.DataFormatR8G8B8A8UnsignedNormalized,
+		ViewType: core1_0.ImageViewType2D,
+		Format:   core1_0.FormatR8G8B8A8UnsignedNormalized,
 		Components: core1_0.ComponentMapping{
-			R: core1_0.SwizzleRed,
-			G: core1_0.SwizzleGreen,
-			B: core1_0.SwizzleBlue,
-			A: core1_0.SwizzleAlpha,
+			R: core1_0.ComponentSwizzleRed,
+			G: core1_0.ComponentSwizzleGreen,
+			B: core1_0.ComponentSwizzleBlue,
+			A: core1_0.ComponentSwizzleAlpha,
 		},
 		SubresourceRange: core1_0.ImageSubresourceRange{
-			AspectMask:     core1_0.AspectColor,
+			AspectMask:     core1_0.ImageAspectColor,
 			BaseMipLevel:   0,
 			LevelCount:     1,
 			BaseArrayLayer: 0,
@@ -502,7 +502,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 	return textureObj, err
 }
 
-func (i *SampleInfo) InitTexture(textureReader io.Reader, extraUsages core1_0.ImageUsages, extraFeatures core1_0.FormatFeatures) error {
+func (i *SampleInfo) InitTexture(textureReader io.Reader, extraUsages core1_0.ImageUsageFlags, extraFeatures core1_0.FormatFeatureFlags) error {
 	/* create image */
 	texObj, err := i.InitImage(textureReader, extraUsages, extraFeatures)
 	if err != nil {

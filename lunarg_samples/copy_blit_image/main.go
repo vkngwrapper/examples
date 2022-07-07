@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	log.Println()
@@ -70,10 +70,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Copy/Blit Image", debugOptions)
@@ -82,7 +82,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -97,7 +97,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	surfCapabilities, _, err := info.Surface.Capabilities(info.Gpus[0])
+	surfCapabilities, _, err := info.Surface.PhysicalDeviceSurfaceCapabilities(info.Gpus[0])
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -142,7 +142,7 @@ func main() {
 		log.Fatalln("FOrmat cannot be used as transfer source")
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -156,7 +156,7 @@ func main() {
 	}
 
 	// We'll be blitting into the presentable image, set the layout accordingly
-	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
+	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.ImageAspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutTransferDstOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageTransfer)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -169,7 +169,7 @@ func main() {
 		MipLevels:     1,
 		ArrayLayers:   1,
 		Samples:       utils.NumSamples,
-		SharingMode:   core1_0.SharingExclusive,
+		SharingMode:   core1_0.SharingModeExclusive,
 		Usage:         core1_0.ImageUsageTransferSrc,
 		Tiling:        core1_0.ImageTilingLinear,
 		InitialLayout: core1_0.ImageLayoutUndefined,
@@ -179,12 +179,12 @@ func main() {
 	}
 
 	memReq := bltSrcImage.MemoryRequirements()
-	memoryIndex, err := info.MemoryTypeFromProperties(memReq.MemoryType, core1_0.MemoryPropertyHostVisible)
+	memoryIndex, err := info.MemoryTypeFromProperties(memReq.MemoryTypeBits, core1_0.MemoryPropertyHostVisible)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	dmem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	dmem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReq.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -196,7 +196,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.SetImageLayout(bltSrcImage, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutGeneral, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageHost)
+	err = info.SetImageLayout(bltSrcImage, core1_0.ImageAspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutGeneral, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageHost)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -212,11 +212,11 @@ func main() {
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(cmdFence, []core1_0.SubmitOptions{
+	_, err = info.GraphicsQueue.Submit(cmdFence, []core1_0.SubmitInfo{
 		{
-			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
-			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
-			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
+			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
+			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
+			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
 		},
 	})
 	if err != nil {
@@ -236,7 +236,7 @@ func main() {
 	}
 	cmdFence.Destroy(nil)
 
-	pImgMem, _, err := dmem.MapMemory(0, memReq.Size, 0)
+	pImgMem, _, err := dmem.Map(0, memReq.Size, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -258,7 +258,7 @@ func main() {
 
 	// Flush the mapped memory and then unmap it  Assume it isn't coherent since
 	// we didn't really confirm
-	_, err = info.Device.FlushMappedMemoryRanges([]core1_0.MappedMemoryRangeOptions{
+	_, err = info.Device.FlushMappedMemoryRanges([]core1_0.MappedMemoryRange{
 		{
 			Memory: dmem,
 			Offset: 0,
@@ -269,7 +269,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	dmem.UnmapMemory()
+	dmem.Unmap()
 
 	_, err = info.Cmd.Reset(0)
 	if err != nil {
@@ -280,7 +280,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	// Intend to blit from this image, set the layout accordingly
-	err = info.SetImageLayout(bltSrcImage, core1_0.AspectColor, core1_0.ImageLayoutGeneral, core1_0.ImageLayoutTransferSrcOptimal, core1_0.PipelineStageHost, core1_0.PipelineStageTransfer)
+	err = info.SetImageLayout(bltSrcImage, core1_0.ImageAspectColor, core1_0.ImageLayoutGeneral, core1_0.ImageLayoutTransferSrcOptimal, core1_0.PipelineStageHost, core1_0.PipelineStageTransfer)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -290,23 +290,23 @@ func main() {
 	// Do a 32x32 blit to all of the dst image - should get big squares
 	err = info.Cmd.CmdBlitImage(bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageBlit{
 		{
-			SourceSubresource: core1_0.ImageSubresourceLayers{
-				AspectMask:     core1_0.AspectColor,
+			SrcSubresource: core1_0.ImageSubresourceLayers{
+				AspectMask:     core1_0.ImageAspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
-			SourceOffsets: [2]core1_0.Offset3D{
+			SrcOffsets: [2]core1_0.Offset3D{
 				{X: 0, Y: 0, Z: 0},
 				{X: 32, Y: 32, Z: 1},
 			},
-			DestinationSubresource: core1_0.ImageSubresourceLayers{
-				AspectMask:     core1_0.AspectColor,
+			DstSubresource: core1_0.ImageSubresourceLayers{
+				AspectMask:     core1_0.ImageAspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
-			DestinationOffsets: [2]core1_0.Offset3D{
+			DstOffsets: [2]core1_0.Offset3D{
 				{X: 0, Y: 0, Z: 0},
 				{X: info.Width, Y: info.Height, Z: 1},
 			},
@@ -318,7 +318,7 @@ func main() {
 	}
 
 	// Use a barrier to make sure the blit is finished before the copy starts
-	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageTransfer, core1_0.PipelineStageTransfer, 0, nil, nil, []core1_0.ImageMemoryBarrierOptions{
+	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageTransfer, core1_0.PipelineStageTransfer, 0, nil, nil, []core1_0.ImageMemoryBarrier{
 		{
 			SrcAccessMask:       core1_0.AccessTransferWrite,
 			DstAccessMask:       core1_0.AccessMemoryRead,
@@ -327,7 +327,7 @@ func main() {
 			SrcQueueFamilyIndex: -1,
 			DstQueueFamilyIndex: -1,
 			SubresourceRange: core1_0.ImageSubresourceRange{
-				AspectMask:     core1_0.AspectColor,
+				AspectMask:     core1_0.ImageAspectColor,
 				BaseMipLevel:   0,
 				LevelCount:     1,
 				BaseArrayLayer: 0,
@@ -344,14 +344,14 @@ func main() {
 	err = info.Cmd.CmdCopyImage(bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageCopy{
 		{
 			SrcSubresource: core1_0.ImageSubresourceLayers{
-				AspectMask:     core1_0.AspectColor,
+				AspectMask:     core1_0.ImageAspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
 			},
 			SrcOffset: core1_0.Offset3D{X: 0, Y: 0, Z: 0},
 			DstSubresource: core1_0.ImageSubresourceLayers{
-				AspectMask:     core1_0.AspectColor,
+				AspectMask:     core1_0.ImageAspectColor,
 				MipLevel:       0,
 				BaseArrayLayer: 0,
 				LayerCount:     1,
@@ -364,7 +364,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageTransfer, core1_0.PipelineStageBottomOfPipe, 0, nil, nil, []core1_0.ImageMemoryBarrierOptions{
+	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageTransfer, core1_0.PipelineStageBottomOfPipe, 0, nil, nil, []core1_0.ImageMemoryBarrier{
 		{
 			SrcAccessMask:       core1_0.AccessTransferWrite,
 			DstAccessMask:       core1_0.AccessMemoryRead,
@@ -373,7 +373,7 @@ func main() {
 			SrcQueueFamilyIndex: -1,
 			DstQueueFamilyIndex: -1,
 			SubresourceRange: core1_0.ImageSubresourceRange{
-				AspectMask:     core1_0.AspectColor,
+				AspectMask:     core1_0.ImageAspectColor,
 				BaseMipLevel:   0,
 				LevelCount:     1,
 				BaseArrayLayer: 0,
@@ -391,13 +391,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
+	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
 		{
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
@@ -406,7 +406,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	_, err = info.GraphicsQueue.WaitForIdle()
+	_, err = info.GraphicsQueue.WaitIdle()
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -424,7 +424,7 @@ func main() {
 			break
 		}
 	}
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.QueuePresent(info.PresentQueue, khr_swapchain.PresentInfo{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

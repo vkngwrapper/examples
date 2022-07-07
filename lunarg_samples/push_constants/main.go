@@ -19,7 +19,7 @@ import (
 //go:embed shaders
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	return false
 }
@@ -72,10 +72,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Simple Push Constants", debugOptions)
@@ -84,7 +84,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -171,10 +171,10 @@ func main() {
 
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
-	descriptorLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateOptions{
-		Bindings: []core1_0.DescriptorLayoutBinding{
+	descriptorLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
+		Bindings: []core1_0.DescriptorSetLayoutBinding{
 			{
-				DescriptorType:  core1_0.DescriptorUniformBuffer,
+				DescriptorType:  core1_0.DescriptorTypeUniformBuffer,
 				DescriptorCount: 1,
 				Binding:         0,
 				StageFlags:      core1_0.StageVertex,
@@ -187,14 +187,14 @@ func main() {
 	// Set up our push constant range, which mirrors the declaration of
 	pushConstantRanges := []core1_0.PushConstantRange{
 		{
-			Stages: core1_0.StageFragment,
-			Offset: 0,
-			Size:   8,
+			StageFlags: core1_0.StageFragment,
+			Offset:     0,
+			Size:       8,
 		},
 	}
 
 	// Create pipeline layout with multiple descriptor sets
-	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateOptions{
+	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		PushConstantRanges: pushConstantRanges,
 		SetLayouts:         []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
@@ -203,15 +203,15 @@ func main() {
 	}
 
 	// Create a single pool to contain data for our descriptor set
-	descriptorPool, _, err := info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateOptions{
+	descriptorPool, _, err := info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets: 1,
-		PoolSizes: []core1_0.PoolSize{
+		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
-				Type:            core1_0.DescriptorUniformBuffer,
+				Type:            core1_0.DescriptorTypeUniformBuffer,
 				DescriptorCount: 1,
 			},
 			{
-				Type:            core1_0.DescriptorCombinedImageSampler,
+				Type:            core1_0.DescriptorTypeCombinedImageSampler,
 				DescriptorCount: 1,
 			},
 		},
@@ -221,22 +221,22 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
-		DescriptorPool:    descriptorPool,
-		AllocationLayouts: []core1_0.DescriptorSetLayout{descriptorLayout},
+	descriptorSets, _, err := info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+		DescriptorPool: descriptorPool,
+		SetLayouts:     []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Populate with info about our uniform buffer for MVP
-	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
 		{
 			DstSet:          descriptorSets[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
 
-			DescriptorType: core1_0.DescriptorUniformBuffer,
+			DescriptorType: core1_0.DescriptorTypeUniformBuffer,
 
 			BufferInfo: []core1_0.DescriptorBufferInfo{
 				info.UniformData.BufferInfo,
@@ -290,8 +290,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, descriptorSets, nil)
+	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, descriptorSets, nil)
 	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
@@ -309,7 +309,7 @@ func main() {
 
 	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{*submitInfo})
+	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{*submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -326,7 +326,7 @@ func main() {
 		}
 	}
 
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, presentInfo)
+	_, err = info.SwapchainExtension.QueuePresent(info.PresentQueue, presentInfo)
 	if err != nil {
 		log.Fatalln(err)
 	}

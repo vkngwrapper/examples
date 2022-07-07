@@ -85,15 +85,15 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	fence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	fence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	submitInfo := core1_0.SubmitOptions{
+	submitInfo := core1_0.SubmitInfo{
 		CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 	}
-	_, err = info.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{
+	_, err = info.GraphicsQueue.Submit(fence, []core1_0.SubmitInfo{
 		submitInfo,
 	})
 	if err != nil {
@@ -125,7 +125,7 @@ func main() {
 	}
 
 	// Now create an event and wait for it on the GPU
-	event, _, err := info.Device.CreateEvent(nil, core1_0.EventCreateOptions{})
+	event, _, err := info.Device.CreateEvent(nil, core1_0.EventCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -150,7 +150,7 @@ func main() {
 	// Note that stepping through this code in the debugger is a bad idea because the
 	// GPU can TDR waiting for the event.  Execute the code from vkQueueSubmit through
 	// vkSetEvent without breakpoints
-	_, err = info.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.Submit(fence, []core1_0.SubmitInfo{submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -214,7 +214,7 @@ func main() {
 	}
 
 	// Send the command buffer and loop waiting for the event
-	_, err = info.GraphicsQueue.SubmitToQueue(fence, []core1_0.SubmitOptions{submitInfo})
+	_, err = info.GraphicsQueue.Submit(fence, []core1_0.SubmitInfo{submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}

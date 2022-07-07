@@ -21,7 +21,7 @@ import (
 //go:embed shaders
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	log.Println()
@@ -76,10 +76,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Draw Cube", debugOptions)
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -190,10 +190,10 @@ func main() {
 			^(info.GpuProps.Limits.MinUniformBufferOffsetAlignment - 1)
 	}
 
-	info.UniformData.Buf, _, err = info.Device.CreateBuffer(nil, core1_0.BufferCreateOptions{
+	info.UniformData.Buf, _, err = info.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
 		Usage:       core1_0.BufferUsageUniformBuffer,
-		BufferSize:  2 * bufSize,
-		SharingMode: core1_0.SharingExclusive,
+		Size:        2 * bufSize,
+		SharingMode: core1_0.SharingModeExclusive,
 	})
 	if err != nil {
 		log.Fatalln(err)
@@ -201,12 +201,12 @@ func main() {
 
 	memReqs := info.UniformData.Buf.MemoryRequirements()
 
-	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryType, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
+	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, core1_0.MemoryAllocateOptions{
+	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -215,7 +215,7 @@ func main() {
 	}
 
 	/* Map the buffer memory and copy both matrices */
-	pData, _, err := info.UniformData.Mem.MapMemory(0, memReqs.Size, 0)
+	pData, _, err := info.UniformData.Mem.Map(0, memReqs.Size, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -234,7 +234,7 @@ func main() {
 
 	copy(dataBuffer, buf.Bytes())
 
-	info.UniformData.Mem.UnmapMemory()
+	info.UniformData.Mem.Unmap()
 
 	_, err = info.UniformData.Buf.BindBufferMemory(info.UniformData.Mem, 0)
 	if err != nil {
@@ -247,10 +247,10 @@ func main() {
 
 	/* Init desciptor and pipeline layouts - descriptor type is
 	 * UNIFORM_BUFFER_DYNAMIC */
-	layoutBindings := []core1_0.DescriptorLayoutBinding{
+	layoutBindings := []core1_0.DescriptorSetLayoutBinding{
 		{
 			Binding:         0,
-			DescriptorType:  core1_0.DescriptorUniformBufferDynamic,
+			DescriptorType:  core1_0.DescriptorTypeUniformBufferDynamic,
 			DescriptorCount: 1,
 			StageFlags:      core1_0.StageVertex,
 		},
@@ -258,7 +258,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateOptions{
+	descLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
@@ -266,18 +266,18 @@ func main() {
 	}
 	info.DescLayout = []core1_0.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateOptions{
+	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateOptions{
+	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets: 1,
-		PoolSizes: []core1_0.PoolSize{
+		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
-				Type:            core1_0.DescriptorUniformBufferDynamic,
+				Type:            core1_0.DescriptorTypeUniformBufferDynamic,
 				DescriptorCount: 1,
 			},
 		},
@@ -286,20 +286,20 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
-		DescriptorPool:    info.DescPool,
-		AllocationLayouts: info.DescLayout,
+	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+		DescriptorPool: info.DescPool,
+		SetLayouts:     info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSetOptions{
+	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
-			DescriptorType:  core1_0.DescriptorUniformBufferDynamic,
+			DescriptorType:  core1_0.DescriptorTypeUniformBufferDynamic,
 
 			BufferInfo: []core1_0.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
@@ -323,7 +323,7 @@ func main() {
 		core1_0.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -336,7 +336,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -349,10 +349,10 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
 
 	/* The first draw should use the first matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, []int{0})
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, []int{0})
 
 	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
@@ -363,7 +363,7 @@ func main() {
 
 	/* The second draw should use the
 	   second matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, []int{bufSize})
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, []int{bufSize})
 	info.Cmd.CmdDraw(36, 1, 0, 0)
 
 	info.Cmd.CmdEndRenderPass()
@@ -371,17 +371,17 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
+	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
 		{
-			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
-			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
-			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
+			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
+			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {
@@ -399,7 +399,7 @@ func main() {
 			break
 		}
 	}
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.QueuePresent(info.PresentQueue, khr_swapchain.PresentInfo{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})

@@ -24,7 +24,7 @@ import (
 //go:embed shaders images
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	return false
 }
@@ -79,10 +79,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Pipeline Cache", debugOptions)
@@ -91,7 +91,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -280,7 +280,7 @@ func main() {
 			fmt.Printf("    Cache contains: 0x%x", headerLength)
 		}
 
-		if cacheHeaderVersion != core1_0.PipelineCacheHeaderVersion1 {
+		if cacheHeaderVersion != core1_0.PipelineCacheHeaderVersionOne {
 			badCache = true
 			fmt.Printf("  Unsupported cache header version in %s.\n", fileName)
 			fmt.Printf("    Cache contains: 0x%x", cacheHeaderVersion)
@@ -319,7 +319,7 @@ func main() {
 	}
 
 	// Feed the initial cache data into cache creation
-	info.PipelineCache, _, err = info.Device.CreatePipelineCache(nil, core1_0.PipelineCacheCreateOptions{
+	info.PipelineCache, _, err = info.Device.CreatePipelineCache(nil, core1_0.PipelineCacheCreateInfo{
 		InitialData: pipelineData,
 	})
 	if err != nil {
@@ -349,8 +349,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, nil)
 	info.Cmd.CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
@@ -368,7 +368,7 @@ func main() {
 	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{*submitInfo})
+	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{*submitInfo})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -388,7 +388,7 @@ func main() {
 		}
 	}
 
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, present)
+	_, err = info.SwapchainExtension.QueuePresent(info.PresentQueue, present)
 	if err != nil {
 		log.Fatalln(err)
 	}

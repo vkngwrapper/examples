@@ -19,7 +19,7 @@ import (
 //go:embed shaders images
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.CallbackDataOptions) bool {
+func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s\n", severity, msgType, data.Message)
 	debug.PrintStack()
 	return false
@@ -69,10 +69,10 @@ func main() {
 
 	info.InstanceExtensionNames = append(info.InstanceExtensionNames, ext_debug_utils.ExtensionName)
 	info.InstanceLayerNames = append(info.InstanceLayerNames, "VK_LAYER_KHRONOS_validation")
-	debugOptions := ext_debug_utils.CreateOptions{
-		CaptureSeverities: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
-		CaptureTypes:      ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
-		Callback:          logDebug,
+	debugOptions := ext_debug_utils.DebugUtilsMessengerCreateInfo{
+		MessageSeverity: ext_debug_utils.SeverityWarning | ext_debug_utils.SeverityError,
+		MessageType:     ext_debug_utils.TypeGeneral | ext_debug_utils.TypeValidation | ext_debug_utils.TypePerformance,
+		UserCallback:    logDebug,
 	}
 
 	err = info.InitInstance("Secondary Command Buffers", debugOptions)
@@ -81,7 +81,7 @@ func main() {
 	}
 
 	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateMessenger(info.Instance, nil, debugOptions)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -207,14 +207,14 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateOptions{
-		PoolSizes: []core1_0.PoolSize{
+	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
+		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
-				Type:            core1_0.DescriptorUniformBuffer,
+				Type:            core1_0.DescriptorTypeUniformBuffer,
 				DescriptorCount: 2,
 			},
 			{
-				Type:            core1_0.DescriptorCombinedImageSampler,
+				Type:            core1_0.DescriptorTypeCombinedImageSampler,
 				DescriptorCount: 2,
 			},
 		},
@@ -224,21 +224,21 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateOptions{
-		DescriptorPool:    info.DescPool,
-		AllocationLayouts: []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
+	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+		DescriptorPool: info.DescPool,
+		SetLayouts:     []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	writes := []core1_0.WriteDescriptorSetOptions{
+	writes := []core1_0.WriteDescriptorSet{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
 			DstArrayElement: 0,
 
-			DescriptorType: core1_0.DescriptorUniformBuffer,
+			DescriptorType: core1_0.DescriptorTypeUniformBuffer,
 			BufferInfo:     []core1_0.DescriptorBufferInfo{info.UniformData.BufferInfo},
 		},
 		{
@@ -246,7 +246,7 @@ func main() {
 			DstBinding:      1,
 			DstArrayElement: 0,
 
-			DescriptorType: core1_0.DescriptorCombinedImageSampler,
+			DescriptorType: core1_0.DescriptorTypeCombinedImageSampler,
 			ImageInfo:      []core1_0.DescriptorImageInfo{greenTex},
 		},
 	}
@@ -266,16 +266,16 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.Device.AllocateCommandBuffers(core1_0.CommandBufferAllocateOptions{
-		CommandPool: info.CmdPool,
-		Level:       core1_0.LevelSecondary,
-		BufferCount: 4,
+	secondaryCmds, _, err := info.Device.AllocateCommandBuffers(core1_0.CommandBufferAllocateInfo{
+		CommandPool:        info.CmdPool,
+		Level:              core1_0.CommandBufferLevelSecondary,
+		CommandBufferCount: 4,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateOptions{})
+	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -288,7 +288,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.AspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageColorAttachmentOutput)
+	err = info.SetImageLayout(info.Buffers[info.CurrentBuffer].Image, core1_0.ImageAspectColor, core1_0.ImageLayoutUndefined, core1_0.ImageLayoutColorAttachmentOptimal, core1_0.PipelineStageTopOfPipe, core1_0.PipelineStageColorAttachmentOutput)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -306,13 +306,13 @@ func main() {
 
 	// now we record four separate command buffers, one for each quadrant of the
 	// screen
-	inheritanceInfo := &core1_0.InheritanceOptions{
+	inheritanceInfo := &core1_0.CommandBufferInheritanceInfo{
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderPass:  info.RenderPass,
-		SubPass:     0,
+		Subpass:     0,
 	}
-	secondaryBegin := core1_0.BeginOptions{
-		Flags:           core1_0.BeginInfoOneTimeSubmit | core1_0.BeginInfoRenderPassContinue,
+	secondaryBegin := core1_0.CommandBufferBeginInfo{
+		Flags:           core1_0.CommandBufferUsageOneTimeSubmit | core1_0.CommandBufferUsageRenderPassContinue,
 		InheritanceInfo: inheritanceInfo,
 	}
 
@@ -322,7 +322,7 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		secondaryCmds[i].CmdBindPipeline(core1_0.BindGraphics, info.Pipeline)
+		secondaryCmds[i].CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
 		firstIndex := 0
 		secondIndex := 1
 
@@ -330,7 +330,7 @@ func main() {
 			firstIndex = 1
 			secondIndex = 2
 		}
-		secondaryCmds[i].CmdBindDescriptorSets(core1_0.BindGraphics, info.PipelineLayout, info.DescSet[firstIndex:secondIndex], nil)
+		secondaryCmds[i].CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet[firstIndex:secondIndex], nil)
 		secondaryCmds[i].CmdBindVertexBuffers([]core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 		viewport.X = 25.0 + 250.0*float32(i%2)
@@ -348,7 +348,7 @@ func main() {
 	// specifying VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS means this
 	// render pass may
 	// ONLY call vkCmdExecuteCommands
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, core1_0.RenderPassBeginOptions{
+	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -373,17 +373,17 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateOptions{})
+	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.SubmitToQueue(drawFence, []core1_0.SubmitOptions{
+	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
 		{
-			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
-			WaitSemaphores: []core1_0.Semaphore{imageAcquiredSemaphore},
-			WaitDstStages:  []core1_0.PipelineStages{core1_0.PipelineStageColorAttachmentOutput},
+			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
+			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
+			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
 		},
 	})
 	if err != nil {
@@ -404,7 +404,7 @@ func main() {
 		}
 	}
 
-	_, err = info.SwapchainExtension.PresentToQueue(info.PresentQueue, khr_swapchain.PresentOptions{
+	_, err = info.SwapchainExtension.QueuePresent(info.PresentQueue, khr_swapchain.PresentInfo{
 		Swapchains:   []khr_swapchain.Swapchain{info.Swapchain},
 		ImageIndices: []int{info.CurrentBuffer},
 	})
