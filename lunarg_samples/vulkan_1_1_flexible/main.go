@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/CannibalVox/VKng/core"
-	"github.com/CannibalVox/VKng/core/common"
-	"github.com/CannibalVox/VKng/core/core1_0"
-	"github.com/CannibalVox/VKng/core/core1_1"
-	"github.com/CannibalVox/VKng/examples/lunarg_samples/utils"
 	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core"
+	"github.com/vkngwrapper/core/common"
+	"github.com/vkngwrapper/core/core1_0"
+	"github.com/vkngwrapper/core/core1_1"
+	"github.com/vkngwrapper/examples/lunarg_samples/utils"
 	"log"
 )
 

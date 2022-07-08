@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/CannibalVox/VKng/core/core1_0"
+	"github.com/vkngwrapper/core/core1_0"
 	"time"
 )
 

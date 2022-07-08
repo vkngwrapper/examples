@@ -2,9 +2,9 @@ package utils
 
 import (
 	"fmt"
-	"github.com/CannibalVox/VKng/core/core1_0"
-	"github.com/CannibalVox/VKng/extensions/khr_swapchain"
 	"github.com/cockroachdb/errors"
+	"github.com/vkngwrapper/core/core1_0"
+	"github.com/vkngwrapper/extensions/khr_swapchain"
 	"image"
 	"image/color"
 	"image/png"
