@@ -55,7 +55,7 @@ func (i *SampleInfo) SetImageLayout(image core1_0.Image, aspectMask core1_0.Imag
 }
 
 func (i *SampleInfo) WritePNG(baseName string) error {
-	mappableImage, _, err := i.Device.CreateImage(nil, core1_0.ImageCreateOptions{
+	mappableImage, _, err := i.Device.CreateImage(nil, core1_0.ImageCreateInfo{
 		ImageType: core1_0.ImageType2D,
 		Format:    i.Format,
 		Extent: core1_0.Extent3D{
@@ -294,7 +294,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 		extraUsages |= core1_0.ImageUsageTransferDst
 	}
 
-	imageOptions := core1_0.ImageCreateOptions{
+	imageOptions := core1_0.ImageCreateInfo{
 		ImageType:   core1_0.ImageType2D,
 		Format:      core1_0.FormatR8G8B8A8UnsignedNormalized,
 		Extent:      core1_0.Extent3D{Width: textureObj.TexWidth, Height: textureObj.TexHeight, Depth: 1},

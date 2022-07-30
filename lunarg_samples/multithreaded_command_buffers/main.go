@@ -20,7 +20,7 @@ import (
 //go:embed shaders
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
+func logDebug(msgType ext_debug_utils.DebugUtilsMessageTypeFlags, severity ext_debug_utils.DebugUtilsMessageSeverityFlags, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	return false
@@ -208,7 +208,7 @@ func main() {
 	 * so init here */
 	info.VertexBinding = core1_0.VertexInputBindingDescription{
 		Binding:   0,
-		InputRate: core1_0.RateVertex,
+		InputRate: core1_0.VertexInputRateVertex,
 		Stride:    int(unsafe.Sizeof(triData[0])),
 	}
 
@@ -427,7 +427,7 @@ func perThreadCode(info *utils.SampleInfo, i int) error {
 	var err error
 
 	commandPools[i], _, err = info.Device.CreateCommandPool(nil, core1_0.CommandPoolCreateInfo{
-		QueueFamilyIndex: &info.GraphicsQueueFamilyIndex,
+		QueueFamilyIndex: info.GraphicsQueueFamilyIndex,
 	})
 	if err != nil {
 		return err

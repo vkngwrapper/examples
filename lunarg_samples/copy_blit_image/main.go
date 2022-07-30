@@ -14,7 +14,7 @@ import (
 	"unsafe"
 )
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
+func logDebug(msgType ext_debug_utils.DebugUtilsMessageTypeFlags, severity ext_debug_utils.DebugUtilsMessageSeverityFlags, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	log.Println()
@@ -102,7 +102,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	if (surfCapabilities.SupportedImageUsage & core1_0.ImageUsageTransferDst) == 0 {
+	if (surfCapabilities.SupportedUsageFlags & core1_0.ImageUsageTransferDst) == 0 {
 		log.Fatalln("Surface cannot be destination of blit - abort")
 	}
 
@@ -162,7 +162,7 @@ func main() {
 	}
 
 	// Create an image, map it, and write some values to the image
-	bltSrcImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateOptions{
+	bltSrcImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateInfo{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
 		Extent:        core1_0.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},

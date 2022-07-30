@@ -14,7 +14,7 @@ Use basic events
 */
 
 func main() {
-	loader, err := core.CreateStaticLinkedLoader()
+	loader, err := core.CreateSystemLoader()
 	if err != nil {
 		log.Fatalln(err)
 	}

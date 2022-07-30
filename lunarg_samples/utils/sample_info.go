@@ -50,7 +50,7 @@ type SampleInfo struct {
 	GraphicsQueueFamilyIndex  int
 	PresentQueueFamilyIndex   int
 	GpuProps                  *core1_0.PhysicalDeviceProperties
-	QueueProps                []*core1_0.QueueFamily
+	QueueProps                []*core1_0.QueueFamilyProperties
 	MemoryProperties          *core1_0.PhysicalDeviceMemoryProperties
 
 	Framebuffer   []core1_0.Framebuffer
@@ -242,10 +242,10 @@ func (i *SampleInfo) InitDeviceExtensionProperties(layerProps *LayerProperties) 
 
 func (i *SampleInfo) InitSwapchainExtension() error {
 	// Construct the surface
-	surfaceLoader := vkng_sdl2.CreateExtensionFromInstance(i.Instance)
+	surfaceLoader := khr_surface.CreateExtensionFromInstance(i.Instance)
 
 	var err error
-	i.Surface, _, err = surfaceLoader.CreateSurface(i.Instance, i.Window)
+	i.Surface, err = vkng_sdl2.CreateSurface(i.Instance, surfaceLoader, i.Window)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func (i *SampleInfo) InitDevice() error {
 func (i *SampleInfo) InitCommandPool() error {
 	var err error
 	i.CmdPool, _, err = i.Device.CreateCommandPool(nil, core1_0.CommandPoolCreateInfo{
-		QueueFamilyIndex: &i.GraphicsQueueFamilyIndex,
+		QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
 		Flags:            core1_0.CommandPoolCreateResetBuffer,
 	})
 	return err
@@ -515,7 +515,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 
 	props := i.Gpus[0].FormatProperties(depthFormat)
 
-	imageOptions := core1_0.ImageCreateOptions{
+	imageOptions := core1_0.ImageCreateInfo{
 		ImageType: core1_0.ImageType2D,
 		Format:    depthFormat,
 		Extent: core1_0.Extent3D{
@@ -896,7 +896,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData any, dataSize int, dataStride 
 	}
 
 	i.VertexBinding = core1_0.VertexInputBindingDescription{
-		InputRate: core1_0.RateVertex,
+		InputRate: core1_0.VertexInputRateVertex,
 		Binding:   0,
 		Stride:    dataStride,
 	}

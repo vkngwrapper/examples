@@ -17,7 +17,7 @@ import (
 //go:embed shaders
 var fileSystem embed.FS
 
-func logDebug(msgType ext_debug_utils.MessageTypes, severity ext_debug_utils.MessageSeverities, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
+func logDebug(msgType ext_debug_utils.DebugUtilsMessageTypeFlags, severity ext_debug_utils.DebugUtilsMessageSeverityFlags, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
 	debug.PrintStack()
 	log.Println()
@@ -135,7 +135,7 @@ func main() {
 	// Create the image that will be used as the input attachment
 	// The image for the color attachment is the presentable image already
 	// created in init_swapchain()
-	inputImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateOptions{
+	inputImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateInfo{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
 		Extent:        core1_0.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
