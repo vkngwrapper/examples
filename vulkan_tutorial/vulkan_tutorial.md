@@ -1,12 +1,8 @@
 # Vulkan-Tutorial.com
 
-This is a go port of the example code at vulkan-tutorial.com, 
- using vkng as a wrapper library.  Each subfolder pertains to a
- single step of the tutorial, and I have tried to strike a balance
- between making the tutorial code match the C++ code as closely
- as possible while still being vaguely idiomatic.  You should
- be able to use the code files here as a reference while working
- through the vulkan tutorial.
+This folder contains various go ports of the example code of step 29 (multisampling) at https://vulkan-tutorial.com.
+ The goal is to show different ways of doing windowing and execution of Vulkan code in Go.
+ For a direct port of the step-by-step tutorial, see https://github.com/vkngwrapper/vulkan-tutorial
 
 ### Rights
 
