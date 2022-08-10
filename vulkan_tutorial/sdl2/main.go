@@ -13,6 +13,8 @@ import (
 	"github.com/vkngwrapper/core/common"
 	"github.com/vkngwrapper/core/core1_0"
 	"github.com/vkngwrapper/extensions/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/khr_portability_enumeration"
+	"github.com/vkngwrapper/extensions/khr_portability_subset"
 	"github.com/vkngwrapper/extensions/khr_surface"
 	"github.com/vkngwrapper/extensions/khr_swapchain"
 	vkng_sdl2 "github.com/vkngwrapper/integrations/sdl2"
@@ -620,6 +622,12 @@ func (app *HelloTriangleApplication) createInstance() error {
 		instanceOptions.EnabledExtensionNames = append(instanceOptions.EnabledExtensionNames, ext_debug_utils.ExtensionName)
 	}
 
+	_, enumerationSupported := extensions[khr_portability_enumeration.ExtensionName]
+	if enumerationSupported {
+		instanceOptions.EnabledExtensionNames = append(instanceOptions.EnabledExtensionNames, khr_portability_enumeration.ExtensionName)
+		instanceOptions.Flags |= khr_portability_enumeration.InstanceCreateEnumeratePortability
+	}
+
 	// Add layers
 	layers, _, err := app.loader.AvailableLayers()
 	if err != nil {
@@ -734,9 +742,9 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 		return err
 	}
 
-	_, supported := extensions["VK_KHR_portability_subset"]
+	_, supported := extensions[khr_portability_subset.ExtensionName]
 	if supported {
-		extensionNames = append(extensionNames, "VK_KHR_portability_subset")
+		extensionNames = append(extensionNames, khr_portability_subset.ExtensionName)
 	}
 
 	app.device, _, err = app.physicalDevice.CreateDevice(nil, core1_0.DeviceCreateInfo{
