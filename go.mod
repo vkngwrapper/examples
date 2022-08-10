@@ -9,9 +9,9 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/loov/hrtime v1.0.3
 	github.com/veandco/go-sdl2 v0.4.24
-	github.com/vkngwrapper/core v1.0.4
-	github.com/vkngwrapper/extensions v1.0.3
-	github.com/vkngwrapper/integrations/sdl2 v1.0.3
+	github.com/vkngwrapper/core v1.0.5
+	github.com/vkngwrapper/extensions v1.0.4
+	github.com/vkngwrapper/integrations/sdl2 v1.0.4
 	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 )
 
