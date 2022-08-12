@@ -9,6 +9,8 @@ import (
 	"github.com/vkngwrapper/core"
 	"github.com/vkngwrapper/core/common"
 	"github.com/vkngwrapper/core/core1_0"
+	"github.com/vkngwrapper/extensions/khr_portability_enumeration"
+	"github.com/vkngwrapper/extensions/khr_portability_subset"
 	"github.com/vkngwrapper/extensions/khr_surface"
 	"github.com/vkngwrapper/extensions/khr_swapchain"
 	vkng_sdl2 "github.com/vkngwrapper/integrations/sdl2"
@@ -176,11 +178,34 @@ func (i *SampleInfo) InitGlobalExtensionProperties(layerProps *LayerProperties) 
 
 func (i *SampleInfo) InitInstanceExtensionNames() error {
 	i.InstanceExtensionNames = i.Window.VulkanGetInstanceExtensions()
+
+	instanceExtensions, _, err := i.Loader.AvailableExtensions()
+	if err != nil {
+		return err
+	}
+
+	_, ok := instanceExtensions[khr_portability_enumeration.ExtensionName]
+	if ok {
+		i.InstanceExtensionNames = append(i.InstanceExtensionNames, khr_portability_enumeration.ExtensionName)
+	}
+
 	return nil
 }
 
 func (i *SampleInfo) InitInstance(appShortName string, next common.Options) error {
 	var err error
+	var flags core1_0.InstanceCreateFlags
+
+	instanceExtensions, _, err := i.Loader.AvailableExtensions()
+	if err != nil {
+		return err
+	}
+
+	_, ok := instanceExtensions[khr_portability_enumeration.ExtensionName]
+	if ok {
+		flags = khr_portability_enumeration.InstanceCreateEnumeratePortability
+	}
+
 	i.Instance, _, err = i.Loader.CreateInstance(nil, core1_0.InstanceCreateInfo{
 		ApplicationName:       appShortName,
 		ApplicationVersion:    common.CreateVersion(0, 0, 1),
@@ -189,6 +214,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 		APIVersion:            common.Vulkan1_0,
 		EnabledExtensionNames: i.InstanceExtensionNames,
 		EnabledLayerNames:     i.InstanceLayerNames,
+		Flags:                 flags,
 		NextOptions: common.NextOptions{
 			Next: next,
 		},
@@ -198,6 +224,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 
 func (i *SampleInfo) InitDeviceExtensionNames() error {
 	i.DeviceExtensionNames = []string{khr_swapchain.ExtensionName}
+
 	return nil
 }
 
@@ -317,6 +344,17 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 
 func (i *SampleInfo) InitDevice() error {
 	var err error
+
+	extensions, _, err := i.Gpus[0].EnumerateDeviceExtensionProperties()
+	if err != nil {
+		return err
+	}
+
+	_, ok := extensions[khr_portability_subset.ExtensionName]
+	if ok {
+		i.DeviceExtensionNames = append(i.DeviceExtensionNames, khr_portability_subset.ExtensionName)
+	}
+
 	i.Device, _, err = i.Gpus[0].CreateDevice(nil, core1_0.DeviceCreateInfo{
 		QueueCreateInfos: []core1_0.DeviceQueueCreateInfo{
 			{

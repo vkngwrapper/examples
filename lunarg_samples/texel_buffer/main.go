@@ -21,8 +21,12 @@ import (
 var fileSystem embed.FS
 
 func logDebug(msgType ext_debug_utils.DebugUtilsMessageTypeFlags, severity ext_debug_utils.DebugUtilsMessageSeverityFlags, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
-	log.Printf("[%s %s] - %s\n", severity, msgType, data.Message)
-	debug.PrintStack()
+	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
+
+	if (severity & ext_debug_utils.SeverityError) != 0 {
+		debug.PrintStack()
+	}
+
 	return false
 }
 

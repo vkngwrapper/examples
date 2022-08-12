@@ -16,7 +16,11 @@ import (
 
 func logDebug(msgType ext_debug_utils.DebugUtilsMessageTypeFlags, severity ext_debug_utils.DebugUtilsMessageSeverityFlags, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
 	log.Printf("[%s %s] - %s", severity, msgType, data.Message)
-	debug.PrintStack()
+
+	if (severity & ext_debug_utils.SeverityError) != 0 {
+		debug.PrintStack()
+	}
+
 	log.Println()
 	return false
 }
