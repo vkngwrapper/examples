@@ -216,17 +216,9 @@ func main() {
         Attachment: 0,
         Layout:     core1_0.ImageLayoutColorAttachmentOptimal,
     }
-    unusedRef := core1_0.AttachmentReference{
-        Attachment: -1,
-        Layout:     core1_0.ImageLayoutUndefined,
-    }
-
     subpass := core1_0.SubpassDescription{
         PipelineBindPoint:      core1_0.PipelineBindPointGraphics,
         DepthStencilAttachment: depthStencilRef,
-        ColorAttachments: []core1_0.AttachmentReference{
-            unusedRef,
-        },
     }
 
     subpasses := []core1_0.SubpassDescription{}
@@ -394,7 +386,7 @@ func main() {
     if err != nil {
         log.Fatalln(err)
     }
-    pipelineOptions.Stages = info.ShaderStages
+    pipelineOptions.Stages = []core1_0.PipelineShaderStageCreateInfo{info.ShaderStages[0]}
 
     /* The first pipeline will render in subpass 0 to fill the stencil */
     pipelineOptions.Subpass = 0
@@ -527,7 +519,7 @@ func main() {
 
     /* note that we reuse a lot of the initialisation strutures from the first
        render pass, so this represents a 'delta' from that configuration */
-    renderPassOptions.Subpasses[0].ColorAttachments[0] = colorRef
+    renderPassOptions.Subpasses[0].ColorAttachments = append(renderPassOptions.Subpasses[0].ColorAttachments, colorRef)
     renderPassOptions.Attachments[0].InitialLayout = core1_0.ImageLayoutColorAttachmentOptimal
     renderPassOptions.Attachments[0].FinalLayout = khr_swapchain.ImageLayoutPresentSrc
     renderPassOptions.Attachments[1].InitialLayout = core1_0.ImageLayoutDepthStencilAttachmentOptimal
