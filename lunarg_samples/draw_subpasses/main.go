@@ -10,6 +10,7 @@ import (
 	"github.com/vkngwrapper/core/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
 	"github.com/vkngwrapper/extensions/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/khr_portability_subset"
 	"github.com/vkngwrapper/extensions/khr_swapchain"
 	"log"
 	"runtime/debug"
@@ -568,11 +569,19 @@ func main() {
 	cb.Attachments[0].BlendEnabled = true
 	cb.Attachments[0].AlphaBlendOp = core1_0.BlendOpAdd
 	cb.Attachments[0].ColorBlendOp = core1_0.BlendOpAdd
-	cb.Attachments[0].SrcColorBlendFactor = core1_0.BlendFactorConstantAlpha
 	cb.Attachments[0].DstColorBlendFactor = core1_0.BlendFactorOne
-	cb.Attachments[0].SrcAlphaBlendFactor = core1_0.BlendFactorConstantAlpha
 	cb.Attachments[0].DstAlphaBlendFactor = core1_0.BlendFactorOne
-	cb.BlendConstants = [4]float32{1, 1, 1, 0.3}
+
+	if info.Device.IsDeviceExtensionActive(khr_portability_subset.ExtensionName) {
+		// Some portability subset devices cannot do constant alpha- support for constant
+		// alpha should really be queried using capabilities in khr_portability_subset, but this is just a sample
+		cb.Attachments[0].SrcColorBlendFactor = core1_0.BlendFactorOne
+		cb.Attachments[0].SrcAlphaBlendFactor = core1_0.BlendFactorOne
+	} else {
+		cb.Attachments[0].SrcColorBlendFactor = core1_0.BlendFactorConstantAlpha
+		cb.Attachments[0].SrcAlphaBlendFactor = core1_0.BlendFactorConstantAlpha
+		cb.BlendConstants = [4]float32{1, 1, 1, 0.3}
+	}
 
 	err = info.InitShaders(vertShaderBytes, fragShaderBytes)
 	if err != nil {
