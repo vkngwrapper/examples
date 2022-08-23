@@ -3,8 +3,8 @@ package utils
 import (
 	"fmt"
 	"github.com/cockroachdb/errors"
-	"github.com/vkngwrapper/core/core1_0"
-	"github.com/vkngwrapper/extensions/khr_swapchain"
+	"github.com/vkngwrapper/core/v2/core1_0"
+	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"image"
 	"image/color"
 	"image/png"

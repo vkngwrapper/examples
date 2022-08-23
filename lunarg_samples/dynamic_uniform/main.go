@@ -7,12 +7,12 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core"
-	"github.com/vkngwrapper/core/common"
-	"github.com/vkngwrapper/core/core1_0"
+	"github.com/vkngwrapper/core/v2"
+	"github.com/vkngwrapper/core/v2/common"
+	"github.com/vkngwrapper/core/v2/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/khr_swapchain"
+	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"log"
 	"runtime/debug"
 	"time"
@@ -357,7 +357,7 @@ func main() {
 	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
 
 	/* The first draw should use the first matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, []int{0})
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, []int{0})
 
 	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
@@ -368,7 +368,7 @@ func main() {
 
 	/* The second draw should use the
 	   second matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, []int{bufSize})
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, []int{bufSize})
 	info.Cmd.CmdDraw(36, 1, 0, 0)
 
 	info.Cmd.CmdEndRenderPass()

@@ -8,12 +8,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core"
-	"github.com/vkngwrapper/core/common"
-	"github.com/vkngwrapper/core/core1_0"
+	"github.com/vkngwrapper/core/v2"
+	"github.com/vkngwrapper/core/v2/common"
+	"github.com/vkngwrapper/core/v2/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/khr_swapchain"
+	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"io/ioutil"
 	"log"
 	"os"
@@ -356,7 +356,7 @@ func main() {
 	}
 
 	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, info.DescSet, nil)
+	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
 	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()

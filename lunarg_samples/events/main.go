@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/vkngwrapper/core"
-	"github.com/vkngwrapper/core/core1_0"
+	"github.com/vkngwrapper/core/v2"
+	"github.com/vkngwrapper/core/v2/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
 	"log"
 )
