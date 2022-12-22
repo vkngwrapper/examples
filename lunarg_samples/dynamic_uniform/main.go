@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"embed"
 	"encoding/binary"
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/vkngwrapper/core/v2"
@@ -13,7 +12,9 @@ import (
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
 	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
 	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
+	vkngmath "github.com/vkngwrapper/math"
 	"log"
+	"math"
 	"runtime/debug"
 	"time"
 	"unsafe"
@@ -178,16 +179,26 @@ func main() {
 	}
 
 	/* Set up uniform buffer with 2 transform matrices in it */
-	info.Projection = mgl32.Perspective(mgl32.DegToRad(45), 1, 0.1, 100)
-	info.View = mgl32.LookAt(0, 3, -10, 0, 0, 0, 0, -1, 0)
-	info.Model = mgl32.Ident4()
-	// Vulkan clip space has inverted Y and half Z.
-	info.Clip = mgl32.Mat4{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1}
-	info.MVP = info.Clip.Mul4(info.Projection).Mul4(info.View).Mul4(info.Model)
+	info.Projection.SetPerspective(math.Pi/4.0, 1, 0.1, 100)
+	info.View.SetLookAt(
+		&vkngmath.Vec3[float32]{X: 0, Y: 3, Z: -10},
+		&vkngmath.Vec3[float32]{X: 0, Y: 0, Z: 0},
+		&vkngmath.Vec3[float32]{X: 0, Y: -1, Z: 0},
+	)
+	info.Model.SetIdentity()
+
+	info.MVP.SetApplyTransform(&info.Model, &info.View)
+	info.MVP.ApplyTransform(&info.Projection)
 
 	/* VULKAN_KEY_START */
-	info.Model = info.Model.Mul4(mgl32.Translate3D(-1.5, 1.5, -1.5))
-	mvp2 := info.Clip.Mul4(info.Projection).Mul4(info.View).Mul4(info.Model)
+	var translate vkngmath.Mat4x4[float32]
+	translate.SetTranslation(-1.5, 1.5, -1.5)
+	info.Model.MultMat4x4(&translate)
+
+	var mvp2 vkngmath.Mat4x4[float32]
+	mvp2.SetApplyTransform(&info.Model, &info.View)
+	mvp2.ApplyTransform(&info.Projection)
+
 	bufSize := int(unsafe.Sizeof(info.MVP))
 
 	if info.GpuProps.Limits.MinUniformBufferOffsetAlignment != 0 {

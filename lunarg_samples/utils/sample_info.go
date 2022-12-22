@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/cockroachdb/errors"
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/vkngwrapper/core/v2"
 	"github.com/vkngwrapper/core/v2/common"
@@ -15,7 +14,9 @@ import (
 	"github.com/vkngwrapper/extensions/v2/khr_surface"
 	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	vkng_sdl2 "github.com/vkngwrapper/integrations/sdl2/v2"
+	vkngmath "github.com/vkngwrapper/math"
 	"log"
+	"math"
 	"unsafe"
 )
 
@@ -96,11 +97,10 @@ type SampleInfo struct {
 	VertexBinding    core1_0.VertexInputBindingDescription
 	VertexAttributes []core1_0.VertexInputAttributeDescription
 
-	Projection mgl32.Mat4
-	View       mgl32.Mat4
-	Model      mgl32.Mat4
-	Clip       mgl32.Mat4
-	MVP        mgl32.Mat4
+	Projection vkngmath.Mat4x4[float32]
+	View       vkngmath.Mat4x4[float32]
+	Model      vkngmath.Mat4x4[float32]
+	MVP        vkngmath.Mat4x4[float32]
 
 	Cmd            core1_0.CommandBuffer // BUffer for initialization commands
 	PipelineLayout core1_0.PipelineLayout
@@ -646,17 +646,21 @@ func (i *SampleInfo) MemoryTypeFromProperties(memoryType uint32, flags core1_0.M
 }
 
 func (i *SampleInfo) InitUniformBuffer() error {
-	fov := mgl32.DegToRad(45)
+	fov := math.Pi / 4.0
 	if i.Width > i.Height {
-		fov *= float32(i.Height) / float32(i.Width)
+		fov *= float64(i.Height) / float64(i.Width)
 	}
 
-	i.Projection = mgl32.Perspective(fov, float32(i.Width)/float32(i.Height), 0.1, 100)
-	i.View = mgl32.LookAt(-5, 3, -10, 0, 0, 0, 0, -1, 0)
-	i.Model = mgl32.Ident4()
-	i.Clip = mgl32.Mat4{1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 1}
+	i.Projection.SetPerspective(fov, float32(i.Width)/float32(i.Height), 0.1, 100)
+	i.View.SetLookAt(
+		&vkngmath.Vec3[float32]{X: -5, Y: 3, Z: -10},
+		&vkngmath.Vec3[float32]{X: 0, Y: 0, Z: 0},
+		&vkngmath.Vec3[float32]{X: 0, Y: -1, Z: 0},
+	)
+	i.Model.SetIdentity()
 
-	i.MVP = i.Clip.Mul4(i.Projection).Mul4(i.View).Mul4(i.Model)
+	i.MVP.SetApplyTransform(&i.Model, &i.View)
+	i.MVP.ApplyTransform(&i.Projection)
 
 	var err error
 	i.UniformData.Buf, _, err = i.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
