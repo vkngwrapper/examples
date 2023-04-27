@@ -3,7 +3,9 @@ package utils
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/cockroachdb/errors"
+	"fmt"
+	"github.com/loov/hrtime"
+	"github.com/pkg/errors"
 	"github.com/veandco/go-sdl2/sdl"
 	"github.com/vkngwrapper/core/v2"
 	"github.com/vkngwrapper/core/v2/common"
@@ -395,16 +397,21 @@ func (i *SampleInfo) InitCommandBuffer() error {
 		return err
 	}
 	i.Cmd = buffers[0]
+
 	return nil
 }
 
 func (i *SampleInfo) ExecuteBeginCommandBuffer() error {
 	_, err := i.Cmd.Begin(core1_0.CommandBufferBeginInfo{})
+
 	return err
 }
 
 func (i *SampleInfo) ExecuteEndCommandBuffer() error {
+	t := hrtime.Now()
 	_, err := i.Cmd.End()
+	n := hrtime.Now()
+	fmt.Println(n - t)
 	return err
 }
 
@@ -582,7 +589,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	} else if (props.OptimalTilingFeatures & core1_0.FormatFeatureDepthStencilAttachment) != 0 {
 		imageOptions.Tiling = core1_0.ImageTilingOptimal
 	} else {
-		return errors.Newf("depth format %s unsupported", depthFormat)
+		return errors.Errorf("depth format %s unsupported", depthFormat)
 	}
 
 	var err error
@@ -642,7 +649,7 @@ func (i *SampleInfo) MemoryTypeFromProperties(memoryType uint32, flags core1_0.M
 		memoryType >>= 1
 	}
 
-	return 0, errors.Newf("could not find a memory type matching type request %x with flags %s", memoryType, flags)
+	return 0, errors.Errorf("could not find a memory type matching type request %x with flags %s", memoryType, flags)
 }
 
 func (i *SampleInfo) InitUniformBuffer() error {

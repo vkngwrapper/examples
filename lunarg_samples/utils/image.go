@@ -2,7 +2,7 @@ package utils
 
 import (
 	"fmt"
-	"github.com/cockroachdb/errors"
+	"github.com/pkg/errors"
 	"github.com/vkngwrapper/core/v2/core1_0"
 	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"image"
@@ -285,7 +285,7 @@ func (i *SampleInfo) InitImage(textureReader io.Reader, extraUsages core1_0.Imag
 
 	if textureObj.NeedsStaging {
 		if (formatProps.OptimalTilingFeatures & allFeatures) != allFeatures {
-			return nil, errors.Newf("Format %s cannot support featureset %s\n", core1_0.FormatR8G8B8A8UnsignedNormalized, allFeatures)
+			return nil, errors.Errorf("Format %s cannot support featureset %s\n", core1_0.FormatR8G8B8A8UnsignedNormalized, allFeatures)
 		}
 		err = i.InitTextureBuffer(textureObj)
 		if err != nil {
