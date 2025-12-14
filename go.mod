@@ -1,6 +1,6 @@
 module github.com/vkngwrapper/examples
 
-go 1.18
+go 1.25
 
 require (
 	github.com/g3n/engine v0.2.0
