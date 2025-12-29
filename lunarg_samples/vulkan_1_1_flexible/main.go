@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
-	"github.com/vkngwrapper/core/v2/core1_1"
-	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/khr_portability_enumeration"
 	"log"
+
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
+	"github.com/vkngwrapper/core/v3/core1_1"
+	"github.com/vkngwrapper/examples/lunarg_samples/utils"
+	"github.com/vkngwrapper/extensions/v3/khr_portability_enumeration"
 )
 
 /*
@@ -34,7 +35,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -45,11 +46,11 @@ func main() {
 	}
 
 	desiredVersion := common.Vulkan1_1
-	fmt.Printf("Loader/Runtime support detected for Vulkan %s\n", info.Loader.APIVersion())
+	fmt.Printf("Loader/Runtime support detected for Vulkan %s\n", info.GlobalDriver.Loader().Version())
 
 	actualVersion := common.Vulkan1_1
-	if info.Loader.APIVersion().IsAtLeast(desiredVersion) {
-		extensions, _, err := info.Loader.AvailableExtensions()
+	if info.GlobalDriver.Loader().Version().IsAtLeast(desiredVersion) {
+		extensions, _, err := info.GlobalDriver.AvailableExtensions()
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -63,7 +64,7 @@ func main() {
 			flags = khr_portability_enumeration.InstanceCreateEnumeratePortability
 		}
 
-		instance, _, err := info.Loader.CreateInstance(nil, core1_0.InstanceCreateInfo{
+		instance, _, err := info.GlobalDriver.CreateInstance(nil, core1_0.InstanceCreateInfo{
 			ApplicationName:       "vulkan_1_1_sampler",
 			ApplicationVersion:    common.CreateVersion(1, 0, 0),
 			EngineName:            "vulkan_1_1_sampler",
@@ -75,25 +76,25 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		defer instance.Destroy(nil)
+		info.InstanceDriver, err = info.GlobalDriver.BuildInstanceDriver(instance)
+		if err != nil {
+			log.Fatalln(err)
+		}
 
-		instance11 := core1_1.PromoteInstance(instance)
+		defer info.InstanceDriver.DestroyInstance(nil)
+
+		instance11 := info.InstanceDriver.(core1_1.CoreInstanceDriver)
 		if instance11 == nil {
 			log.Fatalln("instance v1.1 not loaded")
 		}
 
-		physicalDevices, _, err := instance.EnumeratePhysicalDevices()
+		physicalDevices, _, err := instance11.EnumeratePhysicalDevices()
 		if err != nil {
 			log.Fatalln(err)
 		}
 
 		for _, device := range physicalDevices {
 			if device.DeviceAPIVersion().IsAtLeast(desiredVersion) {
-				device11 := core1_1.PromotePhysicalDevice(device)
-				if device11 == nil {
-					log.Fatalln("physical device v1.1 not loaded")
-				}
-
 				actualVersion = desiredVersion
 
 				break

@@ -5,12 +5,12 @@ import (
 	"encoding/binary"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
 	"log"
 	"runtime/debug"
 	"time"
@@ -52,7 +52,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -85,8 +85,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -212,7 +212,7 @@ func main() {
 
 	// create two identical descriptor sets, each with a different texture but
 	// identical UBOa
-	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
+	info.DescPool, _, err = info.DeviceDriver.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
 				Type:            core1_0.DescriptorTypeUniformBuffer,
@@ -229,7 +229,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+	info.DescSet, _, err = info.DeviceDriver.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
 		DescriptorPool: info.DescPool,
 		SetLayouts:     []core1_0.DescriptorSetLayout{info.DescLayout[0], info.DescLayout[0]},
 	})
@@ -255,7 +255,7 @@ func main() {
 			ImageInfo:      []core1_0.DescriptorImageInfo{greenTex},
 		},
 	}
-	err = info.Device.UpdateDescriptorSets(writes, nil)
+	err = info.DeviceDriver.UpdateDescriptorSets(writes, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -263,7 +263,7 @@ func main() {
 	writes[0].DstSet = info.DescSet[1]
 	writes[1].DstSet = info.DescSet[1]
 	writes[1].ImageInfo[0] = lunargTex
-	err = info.Device.UpdateDescriptorSets(writes, nil)
+	err = info.DeviceDriver.UpdateDescriptorSets(writes, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -271,7 +271,7 @@ func main() {
 	/* VULKAN_KEY_START */
 
 	// create four secondary command buffers, for each quadrant of the screen
-	secondaryCmds, _, err := info.Device.AllocateCommandBuffers(core1_0.CommandBufferAllocateInfo{
+	secondaryCmds, _, err := info.DeviceDriver.AllocateCommandBuffers(core1_0.CommandBufferAllocateInfo{
 		CommandPool:        info.CmdPool,
 		Level:              core1_0.CommandBufferLevelSecondary,
 		CommandBufferCount: 4,
@@ -280,13 +280,13 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
+	imageAcquiredSemaphore, _, err := info.DeviceDriver.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Get the index of the next available swapchain image:
-	info.CurrentBuffer, _, err = info.Swapchain.AcquireNextImage(common.NoTimeout, imageAcquiredSemaphore, nil)
+	info.CurrentBuffer, _, err = info.SwapchainExtension.AcquireNextImage(info.Swapchain, common.NoTimeout, &imageAcquiredSemaphore, nil)
 	// TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
 	// return codes
 	if err != nil {
@@ -322,12 +322,12 @@ func main() {
 	}
 
 	for i := 0; i < 4; i++ {
-		_, err = secondaryCmds[i].Begin(secondaryBegin)
+		_, err = info.DeviceDriver.BeginCommandBuffer(secondaryCmds[i], secondaryBegin)
 		if err != nil {
 			log.Fatalln(err)
 		}
 
-		secondaryCmds[i].CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
+		info.DeviceDriver.CmdBindPipeline(secondaryCmds[i], core1_0.PipelineBindPointGraphics, info.Pipeline)
 		firstIndex := 0
 		secondIndex := 1
 
@@ -335,16 +335,16 @@ func main() {
 			firstIndex = 1
 			secondIndex = 2
 		}
-		secondaryCmds[i].CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet[firstIndex:secondIndex], nil)
-		secondaryCmds[i].CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
+		info.DeviceDriver.CmdBindDescriptorSets(secondaryCmds[i], core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet[firstIndex:secondIndex], nil)
+		info.DeviceDriver.CmdBindVertexBuffers(secondaryCmds[i], 0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 		viewport.X = 25.0 + 250.0*float32(i%2)
 		viewport.Y = 25.0 + 250.0*float32(i/2)
-		secondaryCmds[i].CmdSetViewport([]core1_0.Viewport{viewport})
-		secondaryCmds[i].CmdSetScissor([]core1_0.Rect2D{scissor})
+		info.DeviceDriver.CmdSetViewport(secondaryCmds[i], viewport)
+		info.DeviceDriver.CmdSetScissor(secondaryCmds[i], scissor)
 
-		secondaryCmds[i].CmdDraw(36, 1, 0, 0)
-		_, err = secondaryCmds[i].End()
+		info.DeviceDriver.CmdDraw(secondaryCmds[i], 36, 1, 0, 0)
+		_, err = info.DeviceDriver.EndCommandBuffer(secondaryCmds[i])
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -353,7 +353,7 @@ func main() {
 	// specifying VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS means this
 	// render pass may
 	// ONLY call vkCmdExecuteCommands
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsSecondaryCommandBuffers, core1_0.RenderPassBeginInfo{
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsSecondaryCommandBuffers, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -369,28 +369,27 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdExecuteCommands(secondaryCmds)
+	info.DeviceDriver.CmdExecuteCommands(info.Cmd, secondaryCmds...)
 
-	info.Cmd.CmdEndRenderPass()
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
 
-	_, err = info.Cmd.End()
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
+	drawFence, _, err := info.DeviceDriver.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
-		{
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &drawFence,
+		core1_0.SubmitInfo{
 			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
 			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
 			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
-		},
-	})
+		})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -399,7 +398,7 @@ func main() {
 
 	/* Make sure command buffer is finished before presenting */
 	for {
-		res, err := drawFence.Wait(utils.FenceTimeout)
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -429,12 +428,12 @@ func main() {
 		}
 	}
 
-	info.Device.FreeCommandBuffers(secondaryCmds)
+	info.DeviceDriver.FreeCommandBuffers(secondaryCmds...)
 
 	/* VULKAN_KEY_END */
 
-	drawFence.Destroy(nil)
-	imageAcquiredSemaphore.Destroy(nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
+	info.DeviceDriver.DestroySemaphore(imageAcquiredSemaphore, nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyTextures()
@@ -455,8 +454,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

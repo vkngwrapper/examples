@@ -7,10 +7,10 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/loov/hrtime v1.0.3
 	github.com/pkg/errors v0.9.1
-	github.com/veandco/go-sdl2 v0.4.34
-	github.com/vkngwrapper/core/v2 v2.2.3
-	github.com/vkngwrapper/extensions/v2 v2.2.1
-	github.com/vkngwrapper/integrations/sdl2/v2 v2.1.1
+	github.com/veandco/go-sdl2 v0.4.40
+	github.com/vkngwrapper/core/v3 v3.0.0
+	github.com/vkngwrapper/extensions/v3 v3.0.1
+	github.com/vkngwrapper/integrations/sdl2/v3 v3.0.0
 	github.com/vkngwrapper/math v1.1.2
 	golang.org/x/sync v0.19.0
 )

@@ -4,18 +4,19 @@ import (
 	"bytes"
 	"embed"
 	"encoding/binary"
-	"github.com/loov/hrtime"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
-	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"log"
 	"runtime/debug"
 	"time"
 	"unsafe"
+
+	"github.com/loov/hrtime"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
+	"github.com/vkngwrapper/examples/lunarg_samples/utils"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
 )
 
 //go:embed shaders
@@ -57,7 +58,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -90,8 +91,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -178,7 +179,7 @@ func main() {
 
 	// Create binding and layout for the following, matching contents of shader
 	//   binding 0 = uniform buffer (MVP)
-	descriptorLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
+	descriptorLayout, _, err := info.DeviceDriver.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
 		Bindings: []core1_0.DescriptorSetLayoutBinding{
 			{
 				DescriptorType:  core1_0.DescriptorTypeUniformBuffer,
@@ -201,7 +202,7 @@ func main() {
 	}
 
 	// Create pipeline layout with multiple descriptor sets
-	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
+	info.PipelineLayout, _, err = info.DeviceDriver.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		PushConstantRanges: pushConstantRanges,
 		SetLayouts:         []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
@@ -210,7 +211,7 @@ func main() {
 	}
 
 	// Create a single pool to contain data for our descriptor set
-	descriptorPool, _, err := info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
+	descriptorPool, _, err := info.DeviceDriver.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets: 1,
 		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
@@ -228,7 +229,7 @@ func main() {
 	}
 
 	// Populate descriptor sets
-	descriptorSets, _, err := info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+	descriptorSets, _, err := info.DeviceDriver.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
 		DescriptorPool: descriptorPool,
 		SetLayouts:     []core1_0.DescriptorSetLayout{descriptorLayout},
 	})
@@ -237,7 +238,7 @@ func main() {
 	}
 
 	// Populate with info about our uniform buffer for MVP
-	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
+	err = info.DeviceDriver.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
 		{
 			DstSet:          descriptorSets[0],
 			DstBinding:      0,
@@ -269,7 +270,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdPushConstants(info.PipelineLayout, core1_0.StageFragment, 0, pushWriter.Bytes())
+	info.DeviceDriver.CmdPushConstants(info.Cmd, info.PipelineLayout, core1_0.StageFragment, 0, pushWriter.Bytes())
 
 	/* VULKAN_KEY_END */
 
@@ -292,19 +293,19 @@ func main() {
 	rpBegin := info.InitRenderPassBeginInfo()
 	rpBegin.ClearValues = clearValues
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, rpBegin)
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsInline, rpBegin)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, descriptorSets, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, descriptorSets, nil)
+	info.DeviceDriver.CmdBindVertexBuffers(info.Cmd, 0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
-	info.Cmd.CmdDraw(36, 1, 0, 0)
-	info.Cmd.CmdEndRenderPass()
-	_, err = info.Cmd.End()
+	info.DeviceDriver.CmdDraw(info.Cmd, 36, 1, 0, 0)
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -316,14 +317,14 @@ func main() {
 
 	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
-	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{*submitInfo})
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &drawFence, *submitInfo)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	presentInfo := info.InitPresentInfo()
 	for {
-		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core1_0.Fence{drawFence})
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -350,19 +351,19 @@ func main() {
 		}
 	}
 
-	drawFence.Destroy(nil)
-	info.ImageAcquiredSemaphore.Destroy(nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
+	info.DeviceDriver.DestroySemaphore(info.ImageAcquiredSemaphore, nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 
-	descriptorPool.Destroy(nil)
+	info.DeviceDriver.DestroyDescriptorPool(descriptorPool, nil)
 	info.DestroyVertexBuffer()
 	info.DestroyFramebuffers()
 	info.DestroyShaders()
 	info.DestroyRenderpass()
 
-	descriptorLayout.Destroy(nil)
-	info.PipelineLayout.Destroy(nil)
+	info.DeviceDriver.DestroyDescriptorSetLayout(descriptorLayout, nil)
+	info.DeviceDriver.DestroyPipelineLayout(info.PipelineLayout, nil)
 	info.DestroyUniformBuffer()
 	info.DestroyDepthBuffer()
 	info.DestroySwapchain()
@@ -374,8 +375,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

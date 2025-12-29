@@ -3,19 +3,20 @@ package main
 import (
 	"embed"
 	"encoding/binary"
-	"github.com/loov/hrtime"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
-	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_portability_subset"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"log"
 	"runtime/debug"
 	"time"
 	"unsafe"
+
+	"github.com/loov/hrtime"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
+	"github.com/vkngwrapper/examples/lunarg_samples/utils"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_portability_subset"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
 )
 
 //go:embed shaders
@@ -58,7 +59,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -91,8 +92,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -137,7 +138,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	props := info.Gpus[0].FormatProperties(core1_0.FormatD32SignedFloatS8UnsignedInt)
+	props := info.InstanceDriver.GetPhysicalDeviceFormatProperties(info.Gpus[0], core1_0.FormatD32SignedFloatS8UnsignedInt)
 	if (props.LinearTilingFeatures&core1_0.FormatFeatureDepthStencilAttachment != 0) ||
 		(props.OptimalTilingFeatures&core1_0.FormatFeatureDepthStencilAttachment != 0) {
 		info.Depth.Format = core1_0.FormatD32SignedFloatS8UnsignedInt
@@ -262,7 +263,7 @@ func main() {
 		SubpassDependencies: dependencies,
 	}
 
-	stencilRenderPass, _, err := info.Device.CreateRenderPass(nil, renderPassOptions)
+	stencilRenderPass, _, err := info.DeviceDriver.CreateRenderPass(nil, renderPassOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -359,9 +360,7 @@ func main() {
 	}
 
 	pipelineOptions := core1_0.GraphicsPipelineCreateInfo{
-		Layout:            info.PipelineLayout,
-		BasePipeline:      nil,
-		BasePipelineIndex: 0,
+		Layout: info.PipelineLayout,
 
 		VertexInputState:   vi,
 		InputAssemblyState: ia,
@@ -392,7 +391,7 @@ func main() {
 	/* The first pipeline will render in subpass 0 to fill the stencil */
 	pipelineOptions.Subpass = 0
 
-	stencilCubePipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateInfo{pipelineOptions})
+	stencilCubePipe, _, err := info.DeviceDriver.CreateGraphicsPipelines(&info.PipelineCache, nil, pipelineOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -432,26 +431,26 @@ func main() {
 	pipelineOptions.Subpass = 1
 	pipelineOptions.ColorBlendState = cb
 
-	stencilFullscreenPipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateInfo{pipelineOptions})
+	stencilFullscreenPipe, _, err := info.DeviceDriver.CreateGraphicsPipelines(&info.PipelineCache, nil, pipelineOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	info.DestroyShaders()
-	info.Pipeline = nil
+	info.Pipeline = core1_0.Pipeline{}
 
 	clearValues := []core1_0.ClearValue{
 		core1_0.ClearValueFloat{0.2, 0.2, 0.2, 0.2},
 		core1_0.ClearValueDepthStencil{Depth: 1.0, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
+	imageAcquiredSemaphore, _, err := info.DeviceDriver.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Get the index of the next available swapchain image:
-	info.CurrentBuffer, _, err = info.Swapchain.AcquireNextImage(common.NoTimeout, imageAcquiredSemaphore, nil)
+	info.CurrentBuffer, _, err = info.SwapchainExtension.AcquireNextImage(info.Swapchain, common.NoTimeout, &imageAcquiredSemaphore, nil)
 	// TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
 	// return codes
 	if err != nil {
@@ -471,47 +470,46 @@ func main() {
 		},
 		ClearValues: clearValues,
 	}
-	info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, renderPassBegin)
-
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, stencilCubePipe[0])
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
-
-	viewports := []core1_0.Viewport{
-		{
-			X:        0,
-			Y:        0,
-			Width:    float32(info.Width) / 2.0,
-			Height:   float32(info.Height),
-			MinDepth: 0,
-			MaxDepth: 1,
-		},
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsInline, renderPassBegin)
+	if err != nil {
+		log.Fatalln(err)
 	}
-	info.Cmd.CmdSetViewport(viewports)
 
-	scissors := []core1_0.Rect2D{
-		{
-			Offset: core1_0.Offset2D{0, 0},
-			Extent: core1_0.Extent2D{info.Width / 2, info.Height},
-		},
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, stencilCubePipe[0])
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
+	info.DeviceDriver.CmdBindVertexBuffers(info.Cmd, 0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
+
+	viewport := core1_0.Viewport{
+		X:        0,
+		Y:        0,
+		Width:    float32(info.Width) / 2.0,
+		Height:   float32(info.Height),
+		MinDepth: 0,
+		MaxDepth: 1,
 	}
-	info.Cmd.CmdSetScissor(scissors)
+	info.DeviceDriver.CmdSetViewport(info.Cmd, viewport)
+
+	scissor := core1_0.Rect2D{
+		Offset: core1_0.Offset2D{0, 0},
+		Extent: core1_0.Extent2D{info.Width / 2, info.Height},
+	}
+	info.DeviceDriver.CmdSetScissor(info.Cmd, scissor)
 
 	/* Draw the cube into stencil */
-	info.Cmd.CmdDraw(36, 1, 0, 0)
+	info.DeviceDriver.CmdDraw(info.Cmd, 36, 1, 0, 0)
 
 	/* Advance to the next subpass */
-	info.Cmd.CmdNextSubpass(core1_0.SubpassContentsInline)
+	info.DeviceDriver.CmdNextSubpass(info.Cmd, core1_0.SubpassContentsInline)
 
 	/* Bind the fullscreen pass pipeline */
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, stencilFullscreenPipe[0])
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, stencilFullscreenPipe[0])
 
-	info.Cmd.CmdSetViewport(viewports)
-	info.Cmd.CmdSetScissor(scissors)
+	info.DeviceDriver.CmdSetViewport(info.Cmd, viewport)
+	info.DeviceDriver.CmdSetScissor(info.Cmd, scissor)
 
 	/* Draw the fullscreen pass */
-	info.Cmd.CmdDraw(4, 1, 0, 0)
-	info.Cmd.CmdEndRenderPass()
+	info.DeviceDriver.CmdDraw(info.Cmd, 4, 1, 0, 0)
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
 
 	/**
 	 * Second renderpass in this sample.
@@ -529,7 +527,7 @@ func main() {
 	renderPassOptions.SubpassDependencies[0].DstAccessMask |= core1_0.AccessColorAttachmentRead | core1_0.AccessColorAttachmentWrite
 	renderPassOptions.SubpassDependencies = renderPassOptions.SubpassDependencies[0:1]
 
-	blendRenderPass, _, err := info.Device.CreateRenderPass(nil, renderPassOptions)
+	blendRenderPass, _, err := info.DeviceDriver.CreateRenderPass(nil, renderPassOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -593,9 +591,7 @@ func main() {
 	 * image */
 	pipelineOptions.Subpass = 0
 
-	blendCubePipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateInfo{
-		pipelineOptions,
-	})
+	blendCubePipe, _, err := info.DeviceDriver.CreateGraphicsPipelines(&info.PipelineCache, nil, pipelineOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -622,74 +618,74 @@ func main() {
 	/* This renders in the second subpass */
 	pipelineOptions.Subpass = 1
 
-	blendFullscreenPipe, _, err := info.Device.CreateGraphicsPipelines(info.PipelineCache, nil, []core1_0.GraphicsPipelineCreateInfo{pipelineOptions})
+	blendFullscreenPipe, _, err := info.DeviceDriver.CreateGraphicsPipelines(&info.PipelineCache, nil, pipelineOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	info.DestroyShaders()
-	info.Pipeline = nil
+	info.Pipeline = core1_0.Pipeline{}
 
 	/* Now we are going to render in the right half of the screen */
-	viewports[0].X = float32(info.Width) / 2.0
-	scissors[0].Offset.X = info.Width / 2
+	viewport.X = float32(info.Width) / 2.0
+	scissor.Offset.X = info.Width / 2
 	renderPassBegin.RenderArea.Offset.X = info.Width / 2
 
 	/* Use our framebuffer and render pass */
 	renderPassBegin.Framebuffer = info.Framebuffer[info.CurrentBuffer]
 	renderPassBegin.RenderPass = blendRenderPass
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, renderPassBegin)
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsInline, renderPassBegin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, blendCubePipe[0])
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
-	info.Cmd.CmdSetViewport(viewports)
-	info.Cmd.CmdSetScissor(scissors)
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, blendCubePipe[0])
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
+	info.DeviceDriver.CmdBindVertexBuffers(info.Cmd, 0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.DeviceDriver.CmdSetViewport(info.Cmd, viewport)
+	info.DeviceDriver.CmdSetScissor(info.Cmd, scissor)
 
 	/* Draw the cube blending */
-	info.Cmd.CmdDraw(36, 1, 0, 0)
+	info.DeviceDriver.CmdDraw(info.Cmd, 36, 1, 0, 0)
 
 	/* Advance to the next subpass */
-	info.Cmd.CmdNextSubpass(core1_0.SubpassContentsInline)
+	info.DeviceDriver.CmdNextSubpass(info.Cmd, core1_0.SubpassContentsInline)
 
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, blendFullscreenPipe[0])
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, blendFullscreenPipe[0])
 
 	/* Adjust the viewport to be a square in the centre, just overlapping the
 	 * cube */
-	viewports[0].X += 25
-	viewports[0].Y += 150
-	viewports[0].Width -= 50
-	viewports[0].Height -= 300
+	viewport.X += 25
+	viewport.Y += 150
+	viewport.Width -= 50
+	viewport.Height -= 300
 
-	info.Cmd.CmdSetViewport(viewports)
-	info.Cmd.CmdSetScissor(scissors)
-	info.Cmd.CmdDraw(4, 1, 0, 0)
+	info.DeviceDriver.CmdSetViewport(info.Cmd, viewport)
+	info.DeviceDriver.CmdSetScissor(info.Cmd, scissor)
+	info.DeviceDriver.CmdDraw(info.Cmd, 4, 1, 0, 0)
 
 	/* The second renderpass is complete */
-	info.Cmd.CmdEndRenderPass()
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
 
 	/* VULKAN_KEY_END */
 
-	_, err = info.Cmd.End()
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
+	drawFence, _, err := info.DeviceDriver.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
-		{
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &drawFence,
+		core1_0.SubmitInfo{
 			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
 			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
 			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
 		},
-	})
+	)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -698,7 +694,7 @@ func main() {
 
 	/* Make sure command buffer is finished before presenting */
 	for {
-		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core1_0.Fence{drawFence})
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -732,20 +728,20 @@ func main() {
 	}
 
 	for i := 0; i < info.SwapchainImageCount; i++ {
-		stencilFramebuffers[i].Destroy(nil)
+		info.DeviceDriver.DestroyFramebuffer(stencilFramebuffers[i], nil)
 	}
 
-	stencilRenderPass.Destroy(nil)
-	blendRenderPass.Destroy(nil)
+	info.DeviceDriver.DestroyRenderPass(stencilRenderPass, nil)
+	info.DeviceDriver.DestroyRenderPass(blendRenderPass, nil)
 
-	blendCubePipe[0].Destroy(nil)
-	blendFullscreenPipe[0].Destroy(nil)
+	info.DeviceDriver.DestroyPipeline(blendCubePipe[0], nil)
+	info.DeviceDriver.DestroyPipeline(blendFullscreenPipe[0], nil)
 
-	stencilCubePipe[0].Destroy(nil)
-	stencilFullscreenPipe[0].Destroy(nil)
+	info.DeviceDriver.DestroyPipeline(stencilCubePipe[0], nil)
+	info.DeviceDriver.DestroyPipeline(stencilFullscreenPipe[0], nil)
 
-	imageAcquiredSemaphore.Destroy(nil)
-	drawFence.Destroy(nil)
+	info.DeviceDriver.DestroySemaphore(imageAcquiredSemaphore, nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
 	info.DestroyVertexBuffer()
@@ -762,8 +758,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	info.Window.Destroy()
 }

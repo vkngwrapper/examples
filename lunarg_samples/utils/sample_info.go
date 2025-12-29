@@ -4,22 +4,22 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/loov/hrtime"
-	"github.com/pkg/errors"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
-	"github.com/vkngwrapper/extensions/v2/khr_get_physical_device_properties2"
-	"github.com/vkngwrapper/extensions/v2/khr_portability_enumeration"
-	"github.com/vkngwrapper/extensions/v2/khr_portability_subset"
-	"github.com/vkngwrapper/extensions/v2/khr_surface"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
-	vkng_sdl2 "github.com/vkngwrapper/integrations/sdl2/v2"
-	vkngmath "github.com/vkngwrapper/math"
 	"log"
 	"math"
 	"unsafe"
+
+	"github.com/loov/hrtime"
+	"github.com/pkg/errors"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
+	"github.com/vkngwrapper/extensions/v3/khr_get_physical_device_properties2"
+	"github.com/vkngwrapper/extensions/v3/khr_portability_enumeration"
+	"github.com/vkngwrapper/extensions/v3/khr_portability_subset"
+	"github.com/vkngwrapper/extensions/v3/khr_surface"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
+	vkng_sdl2 "github.com/vkngwrapper/integrations/sdl2/v3"
+	vkngmath "github.com/vkngwrapper/math"
 )
 
 type LayerProperties struct {
@@ -34,8 +34,11 @@ type SwapchainBuffer struct {
 }
 
 type SampleInfo struct {
-	Loader           core.Loader
+	GlobalDriver     core1_0.GlobalDriver
+	InstanceDriver   core1_0.CoreInstanceDriver
+	DeviceDriver     core1_0.CoreDeviceDriver
 	Window           *sdl.Window
+	SurfaceDriver    khr_surface.ExtensionDriver
 	Surface          khr_surface.Surface
 	Prepared         bool
 	UseStagingBuffer bool
@@ -64,7 +67,7 @@ type SampleInfo struct {
 	Format        core1_0.Format
 
 	SwapchainImageCount    int
-	SwapchainExtension     khr_swapchain.Extension
+	SwapchainExtension     khr_swapchain.ExtensionDriver
 	Swapchain              khr_swapchain.Swapchain
 	Buffers                []SwapchainBuffer
 	ImageAcquiredSemaphore core1_0.Semaphore
@@ -152,7 +155,7 @@ func (i *SampleInfo) InitWindow() error {
 }
 
 func (i *SampleInfo) InitGlobalLayerProperties() error {
-	layers, _, err := i.Loader.AvailableLayers()
+	layers, _, err := i.GlobalDriver.AvailableLayers()
 	if err != nil {
 		return err
 	}
@@ -171,7 +174,7 @@ func (i *SampleInfo) InitGlobalLayerProperties() error {
 }
 
 func (i *SampleInfo) InitGlobalExtensionProperties(layerProps *LayerProperties) error {
-	instanceExtensions, _, err := i.Loader.AvailableExtensionsForLayer(layerProps.Properties.LayerName)
+	instanceExtensions, _, err := i.GlobalDriver.AvailableExtensionsForLayer(layerProps.Properties.LayerName)
 	if err != nil {
 		return err
 	}
@@ -186,7 +189,7 @@ func (i *SampleInfo) InitGlobalExtensionProperties(layerProps *LayerProperties) 
 func (i *SampleInfo) InitInstanceExtensionNames() error {
 	i.InstanceExtensionNames = i.Window.VulkanGetInstanceExtensions()
 
-	instanceExtensions, _, err := i.Loader.AvailableExtensions()
+	instanceExtensions, _, err := i.GlobalDriver.AvailableExtensions()
 	if err != nil {
 		return err
 	}
@@ -206,7 +209,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 	var err error
 	var flags core1_0.InstanceCreateFlags
 
-	instanceExtensions, _, err := i.Loader.AvailableExtensions()
+	instanceExtensions, _, err := i.GlobalDriver.AvailableExtensions()
 	if err != nil {
 		return err
 	}
@@ -217,7 +220,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 		flags = khr_portability_enumeration.InstanceCreateEnumeratePortability
 	}
 
-	i.Instance, _, err = i.Loader.CreateInstance(nil, core1_0.InstanceCreateInfo{
+	i.Instance, _, err = i.GlobalDriver.CreateInstance(nil, core1_0.InstanceCreateInfo{
 		ApplicationName:       appShortName,
 		ApplicationVersion:    common.CreateVersion(0, 0, 1),
 		EngineName:            appShortName,
@@ -230,6 +233,11 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 			Next: next,
 		},
 	})
+	if err != nil {
+		return err
+	}
+
+	i.InstanceDriver, err = i.GlobalDriver.BuildInstanceDriver(i.Instance)
 	return err
 }
 
@@ -241,16 +249,16 @@ func (i *SampleInfo) InitDeviceExtensionNames() error {
 
 func (i *SampleInfo) InitEnumerateDevice() error {
 	var err error
-	i.Gpus, _, err = i.Instance.EnumeratePhysicalDevices()
+	i.Gpus, _, err = i.InstanceDriver.EnumeratePhysicalDevices()
 	if err != nil {
 		return err
 	}
 
-	i.QueueProps = i.Gpus[0].QueueFamilyProperties()
+	i.QueueProps = i.InstanceDriver.GetPhysicalDeviceQueueFamilyProperties(i.Gpus[0])
 	i.QueueFamilyCount = len(i.QueueProps)
 
-	i.MemoryProperties = i.Gpus[0].MemoryProperties()
-	i.GpuProps, err = i.Gpus[0].Properties()
+	i.MemoryProperties = i.InstanceDriver.GetPhysicalDeviceMemoryProperties(i.Gpus[0])
+	i.GpuProps, err = i.InstanceDriver.GetPhysicalDeviceProperties(i.Gpus[0])
 	if err != nil {
 		return err
 	}
@@ -266,7 +274,7 @@ func (i *SampleInfo) InitEnumerateDevice() error {
 }
 
 func (i *SampleInfo) InitDeviceExtensionProperties(layerProps *LayerProperties) error {
-	deviceExtensions, _, err := i.Gpus[0].EnumerateDeviceExtensionPropertiesForLayer(layerProps.Properties.LayerName)
+	deviceExtensions, _, err := i.InstanceDriver.EnumerateDeviceExtensionPropertiesForLayer(i.Gpus[0], layerProps.Properties.LayerName)
 	if err != nil {
 		return err
 	}
@@ -280,10 +288,10 @@ func (i *SampleInfo) InitDeviceExtensionProperties(layerProps *LayerProperties) 
 
 func (i *SampleInfo) InitSwapchainExtension() error {
 	// Construct the surface
-	surfaceLoader := khr_surface.CreateExtensionFromInstance(i.Instance)
+	i.SurfaceDriver = khr_surface.CreateExtensionDriverFromCoreDriver(i.InstanceDriver)
 
 	var err error
-	i.Surface, err = vkng_sdl2.CreateSurface(i.Instance, surfaceLoader, i.Window)
+	i.Surface, err = vkng_sdl2.CreateSurface(i.Instance, i.SurfaceDriver, i.Window)
 	if err != nil {
 		return err
 	}
@@ -291,7 +299,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 	// Iterate over each queue to learn whether it supports presenting:
 	var presentSupport []bool
 	for queueIndex := range i.QueueProps {
-		support, _, err := i.Surface.PhysicalDeviceSurfaceSupport(i.Gpus[0], queueIndex)
+		support, _, err := i.SurfaceDriver.GetPhysicalDeviceSurfaceSupport(i.Surface, i.Gpus[0], queueIndex)
 		if err != nil {
 			return err
 		}
@@ -334,7 +342,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 	}
 
 	// Get the list of VkFormats that are supported:
-	formats, _, err := i.Surface.PhysicalDeviceSurfaceFormats(i.Gpus[0])
+	formats, _, err := i.SurfaceDriver.GetPhysicalDeviceSurfaceFormats(i.Surface, i.Gpus[0])
 	if err != nil {
 		return err
 	}
@@ -356,7 +364,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 func (i *SampleInfo) InitDevice() error {
 	var err error
 
-	extensions, _, err := i.Gpus[0].EnumerateDeviceExtensionProperties()
+	extensions, _, err := i.InstanceDriver.EnumerateDeviceExtensionProperties(i.Gpus[0])
 	if err != nil {
 		return err
 	}
@@ -366,7 +374,7 @@ func (i *SampleInfo) InitDevice() error {
 		i.DeviceExtensionNames = append(i.DeviceExtensionNames, khr_portability_subset.ExtensionName)
 	}
 
-	i.Device, _, err = i.Gpus[0].CreateDevice(nil, core1_0.DeviceCreateInfo{
+	i.Device, _, err = i.InstanceDriver.CreateDevice(i.Gpus[0], nil, core1_0.DeviceCreateInfo{
 		QueueCreateInfos: []core1_0.DeviceQueueCreateInfo{
 			{
 				QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
@@ -375,12 +383,17 @@ func (i *SampleInfo) InitDevice() error {
 		},
 		EnabledExtensionNames: i.DeviceExtensionNames,
 	})
+	if err != nil {
+		return err
+	}
+
+	i.DeviceDriver, err = i.InstanceDriver.BuildDeviceDriver(i.Device)
 	return err
 }
 
 func (i *SampleInfo) InitCommandPool() error {
 	var err error
-	i.CmdPool, _, err = i.Device.CreateCommandPool(nil, core1_0.CommandPoolCreateInfo{
+	i.CmdPool, _, err = i.DeviceDriver.CreateCommandPool(nil, core1_0.CommandPoolCreateInfo{
 		QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
 		Flags:            core1_0.CommandPoolCreateResetBuffer,
 	})
@@ -388,7 +401,7 @@ func (i *SampleInfo) InitCommandPool() error {
 }
 
 func (i *SampleInfo) InitCommandBuffer() error {
-	buffers, _, err := i.Device.AllocateCommandBuffers(core1_0.CommandBufferAllocateInfo{
+	buffers, _, err := i.DeviceDriver.AllocateCommandBuffers(core1_0.CommandBufferAllocateInfo{
 		CommandPool:        i.CmdPool,
 		Level:              core1_0.CommandBufferLevelPrimary,
 		CommandBufferCount: 1,
@@ -402,33 +415,33 @@ func (i *SampleInfo) InitCommandBuffer() error {
 }
 
 func (i *SampleInfo) ExecuteBeginCommandBuffer() error {
-	_, err := i.Cmd.Begin(core1_0.CommandBufferBeginInfo{})
+	_, err := i.DeviceDriver.BeginCommandBuffer(i.Cmd, core1_0.CommandBufferBeginInfo{})
 
 	return err
 }
 
 func (i *SampleInfo) ExecuteEndCommandBuffer() error {
 	t := hrtime.Now()
-	_, err := i.Cmd.End()
+	_, err := i.DeviceDriver.EndCommandBuffer(i.Cmd)
 	n := hrtime.Now()
 	fmt.Println(n - t)
 	return err
 }
 
 func (i *SampleInfo) InitDeviceQueue() error {
-	i.GraphicsQueue = i.Device.GetQueue(i.GraphicsQueueFamilyIndex, 0)
+	i.GraphicsQueue = i.DeviceDriver.GetQueue(i.GraphicsQueueFamilyIndex, 0)
 
 	if i.PresentQueueFamilyIndex == i.GraphicsQueueFamilyIndex {
 		i.PresentQueue = i.GraphicsQueue
 		return nil
 	}
 
-	i.PresentQueue = i.Device.GetQueue(i.PresentQueueFamilyIndex, 0)
+	i.PresentQueue = i.DeviceDriver.GetQueue(i.PresentQueueFamilyIndex, 0)
 	return nil
 }
 
 func (i *SampleInfo) InitSwapchain(usage core1_0.ImageUsageFlags) error {
-	surfaceCaps, _, err := i.Surface.PhysicalDeviceSurfaceCapabilities(i.Gpus[0])
+	surfaceCaps, _, err := i.SurfaceDriver.GetPhysicalDeviceSurfaceCapabilities(i.Surface, i.Gpus[0])
 	if err != nil {
 		return err
 	}
@@ -456,7 +469,7 @@ func (i *SampleInfo) InitSwapchain(usage core1_0.ImageUsageFlags) error {
 	}
 
 	// The FIFO present mode is guaranteed by the spec to be supported
-	// Also note that current Android driver only supports FIFO
+	// Also note that current Android loader only supports FIFO
 	presentMode := khr_surface.PresentModeFIFO
 
 	// Determine the number of VkImage's to use in the swap chain.
@@ -489,7 +502,7 @@ func (i *SampleInfo) InitSwapchain(usage core1_0.ImageUsageFlags) error {
 		}
 	}
 
-	i.SwapchainExtension = khr_swapchain.CreateExtensionFromDevice(i.Device)
+	i.SwapchainExtension = khr_swapchain.CreateExtensionDriverFromCoreDriver(i.DeviceDriver)
 	swapchainOptions := khr_swapchain.SwapchainCreateInfo{
 		Surface:          i.Surface,
 		MinImageCount:    desiredNumberOfSwapChainImages,
@@ -517,19 +530,19 @@ func (i *SampleInfo) InitSwapchain(usage core1_0.ImageUsageFlags) error {
 		}
 	}
 
-	i.Swapchain, _, err = i.SwapchainExtension.CreateSwapchain(i.Device, nil, swapchainOptions)
+	i.Swapchain, _, err = i.SwapchainExtension.CreateSwapchain(nil, swapchainOptions)
 	if err != nil {
 		return err
 	}
 
-	images, _, err := i.Swapchain.SwapchainImages()
+	images, _, err := i.SwapchainExtension.GetSwapchainImages(i.Swapchain)
 	if err != nil {
 		return err
 	}
 	i.SwapchainImageCount = len(images)
 
 	for _, image := range images {
-		view, _, err := i.Device.CreateImageView(nil, core1_0.ImageViewCreateInfo{
+		view, _, err := i.DeviceDriver.CreateImageView(nil, core1_0.ImageViewCreateInfo{
 			Image:    image,
 			ViewType: core1_0.ImageViewType2D,
 			Format:   i.Format,
@@ -567,7 +580,7 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	}
 	depthFormat := i.Depth.Format
 
-	props := i.Gpus[0].FormatProperties(depthFormat)
+	props := i.InstanceDriver.GetPhysicalDeviceFormatProperties(i.Gpus[0], depthFormat)
 
 	imageOptions := core1_0.ImageCreateInfo{
 		ImageType: core1_0.ImageType2D,
@@ -593,18 +606,18 @@ func (i *SampleInfo) InitDepthBuffer() error {
 	}
 
 	var err error
-	i.Depth.Image, _, err = i.Device.CreateImage(nil, imageOptions)
+	i.Depth.Image, _, err = i.DeviceDriver.CreateImage(nil, imageOptions)
 	if err != nil {
 		return err
 	}
 
-	imageMemoryReqs := i.Depth.Image.MemoryRequirements()
+	imageMemoryReqs := i.DeviceDriver.GetImageMemoryRequirements(i.Depth.Image)
 	typeIndex, err := i.MemoryTypeFromProperties(imageMemoryReqs.MemoryTypeBits, core1_0.MemoryPropertyDeviceLocal)
 	if err != nil {
 		return err
 	}
 
-	i.Depth.Mem, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
+	i.Depth.Mem, _, err = i.DeviceDriver.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  imageMemoryReqs.Size,
 		MemoryTypeIndex: typeIndex,
 	})
@@ -612,12 +625,12 @@ func (i *SampleInfo) InitDepthBuffer() error {
 		return err
 	}
 
-	_, err = i.Depth.Image.BindImageMemory(i.Depth.Mem, 0)
+	_, err = i.DeviceDriver.BindImageMemory(i.Depth.Image, i.Depth.Mem, 0)
 	if err != nil {
 		return err
 	}
 
-	i.Depth.View, _, err = i.Device.CreateImageView(nil, core1_0.ImageViewCreateInfo{
+	i.Depth.View, _, err = i.DeviceDriver.CreateImageView(nil, core1_0.ImageViewCreateInfo{
 		Image:  i.Depth.Image,
 		Format: depthFormat,
 		Components: core1_0.ComponentMapping{
@@ -670,7 +683,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 	i.MVP.ApplyTransform(&i.Projection)
 
 	var err error
-	i.UniformData.Buf, _, err = i.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
+	i.UniformData.Buf, _, err = i.DeviceDriver.CreateBuffer(nil, core1_0.BufferCreateInfo{
 		Usage:       core1_0.BufferUsageUniformBuffer,
 		Size:        int(unsafe.Sizeof(i.MVP)),
 		SharingMode: core1_0.SharingModeExclusive,
@@ -679,13 +692,13 @@ func (i *SampleInfo) InitUniformBuffer() error {
 		return err
 	}
 
-	memReqs := i.UniformData.Buf.MemoryRequirements()
+	memReqs := i.DeviceDriver.GetBufferMemoryRequirements(i.UniformData.Buf)
 	memoryTypeIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		return err
 	}
 
-	i.UniformData.Mem, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
+	i.UniformData.Mem, _, err = i.DeviceDriver.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -693,7 +706,7 @@ func (i *SampleInfo) InitUniformBuffer() error {
 		return err
 	}
 
-	memPtr, _, err := i.UniformData.Mem.Map(0, memReqs.Size, 0)
+	memPtr, _, err := i.DeviceDriver.MapMemory(i.UniformData.Mem, 0, memReqs.Size, 0)
 	if err != nil {
 		return err
 	}
@@ -703,18 +716,18 @@ func (i *SampleInfo) InitUniformBuffer() error {
 	buf := &bytes.Buffer{}
 	err = binary.Write(buf, common.ByteOrder, i.MVP)
 	if err != nil {
-		i.UniformData.Mem.Unmap()
+		i.DeviceDriver.UnmapMemory(i.UniformData.Mem)
 		return err
 	}
 
 	copy(dataBuffer, buf.Bytes())
 
-	i.UniformData.Mem.Unmap()
+	i.DeviceDriver.UnmapMemory(i.UniformData.Mem)
 	if err != nil {
 		return err
 	}
 
-	_, err = i.UniformData.Buf.BindBufferMemory(i.UniformData.Mem, 0)
+	_, err = i.DeviceDriver.BindBufferMemory(i.UniformData.Buf, i.UniformData.Mem, 0)
 	if err != nil {
 		return err
 	}
@@ -743,7 +756,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 		})
 	}
 
-	layout, _, err := i.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
+	layout, _, err := i.DeviceDriver.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
@@ -751,7 +764,7 @@ func (i *SampleInfo) InitDescriptorAndPipelineLayouts(useTexture bool) error {
 	}
 
 	i.DescLayout = []core1_0.DescriptorSetLayout{layout}
-	i.PipelineLayout, _, err = i.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
+	i.PipelineLayout, _, err = i.DeviceDriver.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		SetLayouts: []core1_0.DescriptorSetLayout{layout},
 	})
 	return err
@@ -825,7 +838,7 @@ func (i *SampleInfo) InitRenderPass(depthPresent, clear bool, finalLayout, initi
 	}
 
 	var err error
-	i.RenderPass, _, err = i.Device.CreateRenderPass(nil, renderPassOptions)
+	i.RenderPass, _, err = i.DeviceDriver.CreateRenderPass(nil, renderPassOptions)
 	return err
 }
 
@@ -844,14 +857,14 @@ func bytesToBytecode(b []byte) []uint32 {
 }
 
 func (i *SampleInfo) InitShaders(vertShaderBytes []byte, fragShaderBytes []byte) error {
-	vertShaderModule, _, err := i.Device.CreateShaderModule(nil, core1_0.ShaderModuleCreateInfo{
+	vertShaderModule, _, err := i.DeviceDriver.CreateShaderModule(nil, core1_0.ShaderModuleCreateInfo{
 		Code: bytesToBytecode(vertShaderBytes),
 	})
 	if err != nil {
 		return err
 	}
 
-	fragShaderModule, _, err := i.Device.CreateShaderModule(nil, core1_0.ShaderModuleCreateInfo{
+	fragShaderModule, _, err := i.DeviceDriver.CreateShaderModule(nil, core1_0.ShaderModuleCreateInfo{
 		Code: bytesToBytecode(fragShaderBytes),
 	})
 	if err != nil {
@@ -877,7 +890,7 @@ func (i *SampleInfo) InitShaders(vertShaderBytes []byte, fragShaderBytes []byte)
 func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 	framebufferOptions := core1_0.FramebufferCreateInfo{
 		RenderPass:  i.RenderPass,
-		Attachments: []core1_0.ImageView{nil},
+		Attachments: []core1_0.ImageView{{}},
 		Width:       i.Width,
 		Height:      i.Height,
 		Layers:      1,
@@ -891,7 +904,7 @@ func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 		framebufferOptions.Attachments[0] = i.Buffers[swapchainInd].View
 
 		var err error
-		frameBuffer, _, err := i.Device.CreateFramebuffer(nil, framebufferOptions)
+		frameBuffer, _, err := i.DeviceDriver.CreateFramebuffer(nil, framebufferOptions)
 		if err != nil {
 			return err
 		}
@@ -904,7 +917,7 @@ func (i *SampleInfo) InitFramebuffers(depthPresent bool) error {
 
 func (i *SampleInfo) InitVertexBuffers(vertexData any, dataSize int, dataStride int, useTexture bool) error {
 	var err error
-	i.VertexBuffer.Buf, _, err = i.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
+	i.VertexBuffer.Buf, _, err = i.DeviceDriver.CreateBuffer(nil, core1_0.BufferCreateInfo{
 		Size:        dataSize,
 		Usage:       core1_0.BufferUsageVertexBuffer,
 		SharingMode: core1_0.SharingModeExclusive,
@@ -913,13 +926,13 @@ func (i *SampleInfo) InitVertexBuffers(vertexData any, dataSize int, dataStride 
 		return err
 	}
 
-	memReqs := i.VertexBuffer.Buf.MemoryRequirements()
+	memReqs := i.DeviceDriver.GetBufferMemoryRequirements(i.VertexBuffer.Buf)
 	memoryIndex, err := i.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		return err
 	}
 
-	i.VertexBuffer.Mem, _, err = i.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
+	i.VertexBuffer.Mem, _, err = i.DeviceDriver.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
@@ -930,7 +943,7 @@ func (i *SampleInfo) InitVertexBuffers(vertexData any, dataSize int, dataStride 
 	i.VertexBuffer.BufferInfo.Range = memReqs.Size
 	i.VertexBuffer.BufferInfo.Offset = 0
 
-	vertexPtr, _, err := i.VertexBuffer.Mem.Map(0, memReqs.Size, 0)
+	vertexPtr, _, err := i.DeviceDriver.MapMemory(i.VertexBuffer.Mem, 0, memReqs.Size, 0)
 	if err != nil {
 		return err
 	}
@@ -940,15 +953,15 @@ func (i *SampleInfo) InitVertexBuffers(vertexData any, dataSize int, dataStride 
 	buf := &bytes.Buffer{}
 	err = binary.Write(buf, common.ByteOrder, vertexData)
 	if err != nil {
-		i.VertexBuffer.Mem.Unmap()
+		i.DeviceDriver.UnmapMemory(i.VertexBuffer.Mem)
 		return err
 	}
 
 	copy(dataBuffer, buf.Bytes())
 
-	i.VertexBuffer.Mem.Unmap()
+	i.DeviceDriver.UnmapMemory(i.VertexBuffer.Mem)
 
-	_, err = i.VertexBuffer.Buf.BindBufferMemory(i.VertexBuffer.Mem, 0)
+	_, err = i.DeviceDriver.BindBufferMemory(i.VertexBuffer.Buf, i.VertexBuffer.Mem, 0)
 	if err != nil {
 		return err
 	}
@@ -997,7 +1010,7 @@ func (i *SampleInfo) InitDescriptorPool(useTexture bool) error {
 	}
 
 	var err error
-	i.DescPool, _, err = i.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
+	i.DescPool, _, err = i.DeviceDriver.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets:   1,
 		PoolSizes: poolSizes,
 	})
@@ -1006,7 +1019,7 @@ func (i *SampleInfo) InitDescriptorPool(useTexture bool) error {
 }
 
 func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
-	descSet, _, err := i.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+	descSet, _, err := i.DeviceDriver.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
 		DescriptorPool: i.DescPool,
 		SetLayouts:     i.DescLayout,
 	})
@@ -1038,12 +1051,12 @@ func (i *SampleInfo) InitDescriptorSet(useTexture bool) error {
 		})
 	}
 
-	return i.Device.UpdateDescriptorSets(writes, nil)
+	return i.DeviceDriver.UpdateDescriptorSets(writes, nil)
 }
 
 func (i *SampleInfo) InitPipelineCache() error {
 	var err error
-	i.PipelineCache, _, err = i.Device.CreatePipelineCache(nil, core1_0.PipelineCacheCreateInfo{})
+	i.PipelineCache, _, err = i.DeviceDriver.CreatePipelineCache(nil, core1_0.PipelineCacheCreateInfo{})
 	return err
 }
 
@@ -1139,10 +1152,9 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 		pipelineOptions.VertexInputState.VertexAttributeDescriptions = i.VertexAttributes
 	}
 
-	pipelines, _, err := i.Device.CreateGraphicsPipelines(i.PipelineCache, nil,
-		[]core1_0.GraphicsPipelineCreateInfo{
-			pipelineOptions,
-		})
+	pipelines, _, err := i.DeviceDriver.CreateGraphicsPipelines(&i.PipelineCache, nil,
+		pipelineOptions,
+	)
 
 	i.Pipeline = pipelines[0]
 	return err
@@ -1150,13 +1162,13 @@ func (i *SampleInfo) InitPipeline(depthPresent bool, vertexPresent bool) error {
 
 func (i *SampleInfo) InitPresentableImage() error {
 	var err error
-	i.ImageAcquiredSemaphore, _, err = i.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
+	i.ImageAcquiredSemaphore, _, err = i.DeviceDriver.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		return err
 	}
 
 	// Get the index of the next available swapchain image:
-	i.CurrentBuffer, _, err = i.Swapchain.AcquireNextImage(common.NoTimeout, i.ImageAcquiredSemaphore, nil)
+	i.CurrentBuffer, _, err = i.SwapchainExtension.AcquireNextImage(i.Swapchain, common.NoTimeout, &i.ImageAcquiredSemaphore, nil)
 
 	// TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
 	// return codes
@@ -1190,7 +1202,7 @@ func (i *SampleInfo) InitViewports() {
 		MinDepth: 0,
 		MaxDepth: 1,
 	}
-	i.Cmd.CmdSetViewport([]core1_0.Viewport{i.Viewport})
+	i.DeviceDriver.CmdSetViewport(i.Cmd, i.Viewport)
 }
 
 func (i *SampleInfo) InitScissors() {
@@ -1198,11 +1210,11 @@ func (i *SampleInfo) InitScissors() {
 		Offset: core1_0.Offset2D{0, 0},
 		Extent: core1_0.Extent2D{i.Width, i.Height},
 	}
-	i.Cmd.CmdSetScissor([]core1_0.Rect2D{i.Scissor})
+	i.DeviceDriver.CmdSetScissor(i.Cmd, i.Scissor)
 }
 
 func (i *SampleInfo) InitFence() (core1_0.Fence, error) {
-	fence, _, err := i.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
+	fence, _, err := i.DeviceDriver.CreateFence(nil, core1_0.FenceCreateInfo{})
 	return fence, err
 }
 
@@ -1221,7 +1233,7 @@ func (i *SampleInfo) InitPresentInfo() khr_swapchain.PresentInfo {
 	}
 }
 func (i *SampleInfo) InitSampler() (core1_0.Sampler, error) {
-	sampler, _, err := i.Device.CreateSampler(nil, core1_0.SamplerCreateInfo{
+	sampler, _, err := i.DeviceDriver.CreateSampler(nil, core1_0.SamplerCreateInfo{
 		MagFilter:        core1_0.FilterNearest,
 		MinFilter:        core1_0.FilterNearest,
 		MipmapMode:       core1_0.SamplerMipmapModeNearest,
@@ -1243,13 +1255,13 @@ func (i *SampleInfo) InitSampler() (core1_0.Sampler, error) {
 
 func (i *SampleInfo) ExecuteQueueCmdBuf(cmdBufs []core1_0.CommandBuffer, fence core1_0.Fence) error {
 	/* Queue the command buffer for execution */
-	_, err := i.GraphicsQueue.Submit(fence, []core1_0.SubmitInfo{
-		{
+	_, err := i.DeviceDriver.QueueSubmit(i.GraphicsQueue, &fence,
+		core1_0.SubmitInfo{
 			WaitSemaphores:   []core1_0.Semaphore{i.ImageAcquiredSemaphore},
 			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
 			CommandBuffers:   cmdBufs,
 		},
-	})
+	)
 	return err
 }
 
@@ -1262,81 +1274,81 @@ func (i *SampleInfo) ExecutePresentImage() error {
 }
 
 func (i *SampleInfo) DestroyPipeline() {
-	i.Pipeline.Destroy(nil)
+	i.DeviceDriver.DestroyPipeline(i.Pipeline, nil)
 }
 
 func (i *SampleInfo) DestroyPipelineCache() {
-	i.PipelineCache.Destroy(nil)
+	i.DeviceDriver.DestroyPipelineCache(i.PipelineCache, nil)
 }
 
 func (i *SampleInfo) DestroyUniformBuffer() {
-	i.UniformData.Buf.Destroy(nil)
-	i.UniformData.Mem.Free(nil)
+	i.DeviceDriver.DestroyBuffer(i.UniformData.Buf, nil)
+	i.DeviceDriver.FreeMemory(i.UniformData.Mem, nil)
 }
 
 func (i *SampleInfo) DestroyVertexBuffer() {
-	i.VertexBuffer.Buf.Destroy(nil)
-	i.VertexBuffer.Mem.Free(nil)
+	i.DeviceDriver.DestroyBuffer(i.VertexBuffer.Buf, nil)
+	i.DeviceDriver.FreeMemory(i.VertexBuffer.Mem, nil)
 }
 
 func (i *SampleInfo) DestroyFramebuffers() {
 	for ind := 0; ind < i.SwapchainImageCount; ind++ {
-		i.Framebuffer[ind].Destroy(nil)
+		i.DeviceDriver.DestroyFramebuffer(i.Framebuffer[ind], nil)
 	}
 }
 
 func (i *SampleInfo) DestroyShaders() {
-	i.ShaderStages[0].Module.Destroy(nil)
-	i.ShaderStages[1].Module.Destroy(nil)
+	i.DeviceDriver.DestroyShaderModule(i.ShaderStages[0].Module, nil)
+	i.DeviceDriver.DestroyShaderModule(i.ShaderStages[1].Module, nil)
 }
 
 func (i *SampleInfo) DestroyRenderpass() {
-	i.RenderPass.Destroy(nil)
+	i.DeviceDriver.DestroyRenderPass(i.RenderPass, nil)
 }
 
 func (i *SampleInfo) DestroyDepthBuffer() {
-	i.Depth.View.Destroy(nil)
-	i.Depth.Image.Destroy(nil)
-	i.Depth.Mem.Free(nil)
+	i.DeviceDriver.DestroyImageView(i.Depth.View, nil)
+	i.DeviceDriver.DestroyImage(i.Depth.Image, nil)
+	i.DeviceDriver.FreeMemory(i.Depth.Mem, nil)
 }
 
 func (i *SampleInfo) DestroySwapchain() {
 	for j := 0; j < i.SwapchainImageCount; j++ {
-		i.Buffers[j].View.Destroy(nil)
+		i.DeviceDriver.DestroyImageView(i.Buffers[j].View, nil)
 	}
 
-	i.Swapchain.Destroy(nil)
+	i.SwapchainExtension.DestroySwapchain(i.Swapchain, nil)
 }
 
 func (i *SampleInfo) DestroyCommandBuffer() {
-	i.Cmd.Free()
+	i.DeviceDriver.FreeCommandBuffers(i.Cmd)
 }
 
 func (i *SampleInfo) DestroyCommandPool() {
-	i.CmdPool.Destroy(nil)
+	i.DeviceDriver.DestroyCommandPool(i.CmdPool, nil)
 }
 
 func (i *SampleInfo) DestroyDevice() error {
-	_, err := i.Device.WaitIdle()
+	_, err := i.DeviceDriver.DeviceWaitIdle()
 	if err != nil {
 		return err
 	}
 
-	i.Device.Destroy(nil)
+	i.DeviceDriver.DestroyDevice(nil)
 	return nil
 }
 
 func (i *SampleInfo) DestroyInstance() {
-	i.Instance.Destroy(nil)
+	i.InstanceDriver.DestroyInstance(nil)
 }
 
 func (i *SampleInfo) DestroyDescriptorPool() {
-	i.DescPool.Destroy(nil)
+	i.DeviceDriver.DestroyDescriptorPool(i.DescPool, nil)
 }
 
 func (i *SampleInfo) DestroyDescriptorAndPipelineLayouts() {
 	for ind := 0; ind < NumDescriptorSets; ind++ {
-		i.DescLayout[ind].Destroy(nil)
+		i.DeviceDriver.DestroyDescriptorSetLayout(i.DescLayout[ind], nil)
 	}
-	i.PipelineLayout.Destroy(nil)
+	i.DeviceDriver.DestroyPipelineLayout(i.PipelineLayout, nil)
 }

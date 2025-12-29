@@ -8,12 +8,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
 	"io/ioutil"
 	"log"
 	"os"
@@ -63,7 +63,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -96,8 +96,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -325,7 +325,7 @@ func main() {
 	}
 
 	// Feed the initial cache data into cache creation
-	info.PipelineCache, _, err = info.Device.CreatePipelineCache(nil, core1_0.PipelineCacheCreateInfo{
+	info.PipelineCache, _, err = info.DeviceDriver.CreatePipelineCache(nil, core1_0.PipelineCacheCreateInfo{
 		InitialData: pipelineData,
 	})
 	if err != nil {
@@ -350,19 +350,19 @@ func main() {
 	clearValues := info.InitClearColorAndDepth()
 	rpBegin := info.InitRenderPassBeginInfo()
 	rpBegin.ClearValues = clearValues
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, rpBegin)
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsInline, rpBegin)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
-	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
+	info.DeviceDriver.CmdBindVertexBuffers(info.Cmd, 0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 	info.InitViewports()
 	info.InitScissors()
-	info.Cmd.CmdDraw(36, 1, 0, 0)
-	info.Cmd.CmdEndRenderPass()
-	_, err = info.Cmd.End()
+	info.DeviceDriver.CmdDraw(info.Cmd, 36, 1, 0, 0)
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -374,7 +374,7 @@ func main() {
 	submitInfo := info.InitSubmitInfo(core1_0.PipelineStageColorAttachmentOutput)
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{*submitInfo})
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &drawFence, *submitInfo)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -384,7 +384,7 @@ func main() {
 
 	/* Make sure command buffer is finished before presenting */
 	for {
-		res, err := drawFence.Wait(utils.FenceTimeout)
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -420,7 +420,7 @@ func main() {
 	// earlier, depends on when the pipeline cache stops being populated
 	// internally.
 
-	endCacheData, _, err := info.PipelineCache.CacheData()
+	endCacheData, _, err := info.DeviceDriver.GetPipelineCacheData(info.PipelineCache)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -433,8 +433,8 @@ func main() {
 
 	/* VULKAN_KEY_END */
 
-	drawFence.Destroy(nil)
-	info.ImageAcquiredSemaphore.Destroy(nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
+	info.DeviceDriver.DestroySemaphore(info.ImageAcquiredSemaphore, nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyTextures()
@@ -455,8 +455,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

@@ -1,19 +1,20 @@
 package main
 
 import (
-	"github.com/loov/hrtime"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
-	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
 	"log"
 	"runtime"
 	"runtime/debug"
 	"time"
 	"unsafe"
+
+	"github.com/loov/hrtime"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
+	"github.com/vkngwrapper/examples/lunarg_samples/utils"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
 )
 
 func logDebug(msgType ext_debug_utils.DebugUtilsMessageTypeFlags, severity ext_debug_utils.DebugUtilsMessageSeverityFlags, data *ext_debug_utils.DebugUtilsMessengerCallbackData) bool {
@@ -56,7 +57,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -89,8 +90,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -105,7 +106,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	surfCapabilities, _, err := info.Surface.PhysicalDeviceSurfaceCapabilities(info.Gpus[0])
+	surfCapabilities, _, err := info.SurfaceDriver.GetPhysicalDeviceSurfaceCapabilities(info.Surface, info.Gpus[0])
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -145,18 +146,18 @@ func main() {
 	}
 
 	/* VULKAN_KEY_START */
-	formatProps := info.Gpus[0].FormatProperties(info.Format)
+	formatProps := info.InstanceDriver.GetPhysicalDeviceFormatProperties(info.Gpus[0], info.Format)
 	if (formatProps.LinearTilingFeatures & core1_0.FormatFeatureBlitSource) == 0 {
 		log.Fatalln("Format cannot be used as transfer source")
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
+	imageAcquiredSemaphore, _, err := info.DeviceDriver.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Get the index of the next available swapchain image:
-	info.CurrentBuffer, _, err = info.Swapchain.AcquireNextImage(common.NoTimeout, imageAcquiredSemaphore, nil)
+	info.CurrentBuffer, _, err = info.SwapchainExtension.AcquireNextImage(info.Swapchain, common.NoTimeout, &imageAcquiredSemaphore, nil)
 	// TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
 	// return codes
 	if err != nil {
@@ -170,7 +171,7 @@ func main() {
 	}
 
 	// Create an image, map it, and write some values to the image
-	bltSrcImage, _, err := info.Device.CreateImage(nil, core1_0.ImageCreateInfo{
+	bltSrcImage, _, err := info.DeviceDriver.CreateImage(nil, core1_0.ImageCreateInfo{
 		ImageType:     core1_0.ImageType2D,
 		Format:        info.Format,
 		Extent:        core1_0.Extent3D{Width: info.Width, Height: info.Height, Depth: 1},
@@ -186,20 +187,20 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	memReq := bltSrcImage.MemoryRequirements()
+	memReq := info.DeviceDriver.GetImageMemoryRequirements(bltSrcImage)
 	memoryIndex, err := info.MemoryTypeFromProperties(memReq.MemoryTypeBits, core1_0.MemoryPropertyHostVisible)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	dmem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
+	dmem, _, err := info.DeviceDriver.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReq.Size,
 		MemoryTypeIndex: memoryIndex,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
-	_, err = bltSrcImage.BindImageMemory(dmem, 0)
+	_, err = info.DeviceDriver.BindImageMemory(bltSrcImage, dmem, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -209,7 +210,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	_, err = info.Cmd.End()
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -220,20 +221,20 @@ func main() {
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.Submit(cmdFence, []core1_0.SubmitInfo{
-		{
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &cmdFence,
+		core1_0.SubmitInfo{
 			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
 			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
 			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
 		},
-	})
+	)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Make sure command buffer is finished before mapping */
 	for {
-		res, err := cmdFence.Wait(common.NoTimeout)
+		res, err := info.DeviceDriver.WaitForFences(true, common.NoTimeout, cmdFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -242,9 +243,9 @@ func main() {
 			break
 		}
 	}
-	cmdFence.Destroy(nil)
+	info.DeviceDriver.DestroyFence(cmdFence, nil)
 
-	pImgMem, _, err := dmem.Map(0, memReq.Size, 0)
+	pImgMem, _, err := info.DeviceDriver.MapMemory(dmem, 0, memReq.Size, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -266,20 +267,20 @@ func main() {
 
 	// Flush the mapped memory and then unmap it  Assume it isn't coherent since
 	// we didn't really confirm
-	_, err = info.Device.FlushMappedMemoryRanges([]core1_0.MappedMemoryRange{
-		{
+	_, err = info.DeviceDriver.FlushMappedMemoryRanges(
+		core1_0.MappedMemoryRange{
 			Memory: dmem,
 			Offset: 0,
 			Size:   memReq.Size,
 		},
-	})
+	)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	dmem.Unmap()
+	info.DeviceDriver.UnmapMemory(dmem)
 
-	_, err = info.Cmd.Reset(0)
+	_, err = info.DeviceDriver.ResetCommandBuffer(info.Cmd, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -296,7 +297,7 @@ func main() {
 	bltDstImage := info.Buffers[info.CurrentBuffer].Image
 
 	// Do a 32x32 blit to all of the dst image - should get big squares
-	err = info.Cmd.CmdBlitImage(bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageBlit{
+	err = info.DeviceDriver.CmdBlitImage(info.Cmd, bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageBlit{
 		{
 			SrcSubresource: core1_0.ImageSubresourceLayers{
 				AspectMask:     core1_0.ImageAspectColor,
@@ -326,7 +327,7 @@ func main() {
 	}
 
 	// Use a barrier to make sure the blit is finished before the copy starts
-	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageTransfer, core1_0.PipelineStageTransfer, 0, nil, nil, []core1_0.ImageMemoryBarrier{
+	err = info.DeviceDriver.CmdPipelineBarrier(info.Cmd, core1_0.PipelineStageTransfer, core1_0.PipelineStageTransfer, 0, nil, nil, []core1_0.ImageMemoryBarrier{
 		{
 			SrcAccessMask:       core1_0.AccessTransferWrite,
 			DstAccessMask:       core1_0.AccessMemoryRead,
@@ -349,8 +350,8 @@ func main() {
 	}
 
 	// Do a image copy to part of the dst image - checks should stay small
-	err = info.Cmd.CmdCopyImage(bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal, []core1_0.ImageCopy{
-		{
+	err = info.DeviceDriver.CmdCopyImage(info.Cmd, bltSrcImage, core1_0.ImageLayoutTransferSrcOptimal, bltDstImage, core1_0.ImageLayoutTransferDstOptimal,
+		core1_0.ImageCopy{
 			SrcSubresource: core1_0.ImageSubresourceLayers{
 				AspectMask:     core1_0.ImageAspectColor,
 				MipLevel:       0,
@@ -367,12 +368,12 @@ func main() {
 			DstOffset: core1_0.Offset3D{X: 256, Y: 256, Z: 0},
 			Extent:    core1_0.Extent3D{Width: 128, Height: 128, Depth: 1},
 		},
-	})
+	)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdPipelineBarrier(core1_0.PipelineStageTransfer, core1_0.PipelineStageBottomOfPipe, 0, nil, nil, []core1_0.ImageMemoryBarrier{
+	err = info.DeviceDriver.CmdPipelineBarrier(info.Cmd, core1_0.PipelineStageTransfer, core1_0.PipelineStageBottomOfPipe, 0, nil, nil, []core1_0.ImageMemoryBarrier{
 		{
 			SrcAccessMask:       core1_0.AccessTransferWrite,
 			DstAccessMask:       core1_0.AccessMemoryRead,
@@ -394,27 +395,27 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	_, err = info.Cmd.End()
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
+	drawFence, _, err := info.DeviceDriver.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
-		{
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &drawFence,
+		core1_0.SubmitInfo{
 			CommandBuffers: []core1_0.CommandBuffer{info.Cmd},
 		},
-	})
+	)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	_, err = info.GraphicsQueue.WaitIdle()
+	_, err = info.DeviceDriver.QueueWaitIdle(info.GraphicsQueue)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -423,7 +424,7 @@ func main() {
 
 	/* Make sure command buffer is finished before presenting */
 	for {
-		res, err := drawFence.Wait(utils.FenceTimeout)
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -454,10 +455,10 @@ func main() {
 		}
 	}
 
-	imageAcquiredSemaphore.Destroy(nil)
-	drawFence.Destroy(nil)
-	bltSrcImage.Destroy(nil)
-	dmem.Free(nil)
+	info.DeviceDriver.DestroySemaphore(imageAcquiredSemaphore, nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
+	info.DeviceDriver.DestroyImage(bltSrcImage, nil)
+	info.DeviceDriver.FreeMemory(dmem, nil)
 	info.DestroySwapchain()
 	info.DestroyCommandBuffer()
 	info.DestroyCommandPool()
@@ -465,8 +466,8 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {

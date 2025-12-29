@@ -4,20 +4,21 @@ import (
 	"bytes"
 	"embed"
 	"encoding/binary"
-	"github.com/loov/hrtime"
-	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
-	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
-	vkngmath "github.com/vkngwrapper/math"
 	"log"
 	"math"
 	"runtime/debug"
 	"time"
 	"unsafe"
+
+	"github.com/loov/hrtime"
+	"github.com/veandco/go-sdl2/sdl"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
+	"github.com/vkngwrapper/examples/lunarg_samples/utils"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
+	vkngmath "github.com/vkngwrapper/math"
 )
 
 //go:embed shaders
@@ -60,7 +61,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -93,8 +94,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -206,7 +207,7 @@ func main() {
 			^(info.GpuProps.Limits.MinUniformBufferOffsetAlignment - 1)
 	}
 
-	info.UniformData.Buf, _, err = info.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
+	info.UniformData.Buf, _, err = info.DeviceDriver.CreateBuffer(nil, core1_0.BufferCreateInfo{
 		Usage:       core1_0.BufferUsageUniformBuffer,
 		Size:        2 * bufSize,
 		SharingMode: core1_0.SharingModeExclusive,
@@ -215,14 +216,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	memReqs := info.UniformData.Buf.MemoryRequirements()
+	memReqs := info.DeviceDriver.GetBufferMemoryRequirements(info.UniformData.Buf)
 
 	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.UniformData.Mem, _, err = info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
+	info.UniformData.Mem, _, err = info.DeviceDriver.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -231,7 +232,7 @@ func main() {
 	}
 
 	/* Map the buffer memory and copy both matrices */
-	pData, _, err := info.UniformData.Mem.Map(0, memReqs.Size, 0)
+	pData, _, err := info.DeviceDriver.MapMemory(info.UniformData.Mem, 0, memReqs.Size, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -250,9 +251,9 @@ func main() {
 
 	copy(dataBuffer, buf.Bytes())
 
-	info.UniformData.Mem.Unmap()
+	info.DeviceDriver.UnmapMemory(info.UniformData.Mem)
 
-	_, err = info.UniformData.Buf.BindBufferMemory(info.UniformData.Mem, 0)
+	_, err = info.DeviceDriver.BindBufferMemory(info.UniformData.Buf, info.UniformData.Mem, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -274,7 +275,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
+	descLayout, _, err := info.DeviceDriver.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
 		Bindings: layoutBindings,
 	})
 	if err != nil {
@@ -282,14 +283,14 @@ func main() {
 	}
 	info.DescLayout = []core1_0.DescriptorSetLayout{descLayout}
 
-	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
+	info.PipelineLayout, _, err = info.DeviceDriver.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
+	info.DescPool, _, err = info.DeviceDriver.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets: 1,
 		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
@@ -302,7 +303,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+	info.DescSet, _, err = info.DeviceDriver.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
 		DescriptorPool: info.DescPool,
 		SetLayouts:     info.DescLayout,
 	})
@@ -310,7 +311,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
+	err = info.DeviceDriver.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
@@ -339,20 +340,20 @@ func main() {
 		core1_0.ClearValueDepthStencil{Depth: 1, Stencil: 0},
 	}
 
-	imageAcquiredSemaphore, _, err := info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
+	imageAcquiredSemaphore, _, err := info.DeviceDriver.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Get the index of the next available swapchain image:
-	info.CurrentBuffer, _, err = info.Swapchain.AcquireNextImage(common.NoTimeout, imageAcquiredSemaphore, nil)
+	info.CurrentBuffer, _, err = info.SwapchainExtension.AcquireNextImage(info.Swapchain, common.NoTimeout, &imageAcquiredSemaphore, nil)
 	// TODO: Deal with the VK_SUBOPTIMAL_KHR and VK_ERROR_OUT_OF_DATE_KHR
 	// return codes
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -365,48 +366,48 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, info.Pipeline)
 
 	/* The first draw should use the first matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, []int{0})
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, []int{0})
 
-	info.Cmd.CmdBindVertexBuffers(0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
+	info.DeviceDriver.CmdBindVertexBuffers(info.Cmd, 0, []core1_0.Buffer{info.VertexBuffer.Buf}, []int{0})
 
 	info.InitViewports()
 	info.InitScissors()
 
-	info.Cmd.CmdDraw(36, 1, 0, 0)
+	info.DeviceDriver.CmdDraw(info.Cmd, 36, 1, 0, 0)
 
 	/* The second draw should use the
 	   second matrix in the buffer */
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, []int{bufSize})
-	info.Cmd.CmdDraw(36, 1, 0, 0)
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, []int{bufSize})
+	info.DeviceDriver.CmdDraw(info.Cmd, 36, 1, 0, 0)
 
-	info.Cmd.CmdEndRenderPass()
-	_, err = info.Cmd.End()
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
+	drawFence, _, err := info.DeviceDriver.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Queue the command buffer for execution */
-	_, err = info.GraphicsQueue.Submit(drawFence, []core1_0.SubmitInfo{
-		{
+	_, err = info.DeviceDriver.QueueSubmit(info.GraphicsQueue, &drawFence,
+		core1_0.SubmitInfo{
 			WaitSemaphores:   []core1_0.Semaphore{imageAcquiredSemaphore},
 			CommandBuffers:   []core1_0.CommandBuffer{info.Cmd},
 			WaitDstStageMask: []core1_0.PipelineStageFlags{core1_0.PipelineStageColorAttachmentOutput},
 		},
-	})
+	)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	/* Now present the image in the window */
 	for {
-		res, err := info.Device.WaitForFences(true, utils.FenceTimeout, []core1_0.Fence{drawFence})
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -437,8 +438,8 @@ func main() {
 		}
 	}
 
-	drawFence.Destroy(nil)
-	imageAcquiredSemaphore.Destroy(nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
+	info.DeviceDriver.DestroySemaphore(imageAcquiredSemaphore, nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
@@ -458,8 +459,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	info.Window.Destroy()
 }

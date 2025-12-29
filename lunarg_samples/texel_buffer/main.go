@@ -6,12 +6,12 @@ import (
 	"encoding/binary"
 	"github.com/loov/hrtime"
 	"github.com/veandco/go-sdl2/sdl"
-	"github.com/vkngwrapper/core/v2"
-	"github.com/vkngwrapper/core/v2/common"
-	"github.com/vkngwrapper/core/v2/core1_0"
+	"github.com/vkngwrapper/core/v3"
+	"github.com/vkngwrapper/core/v3/common"
+	"github.com/vkngwrapper/core/v3/core1_0"
 	"github.com/vkngwrapper/examples/lunarg_samples/utils"
-	"github.com/vkngwrapper/extensions/v2/ext_debug_utils"
-	"github.com/vkngwrapper/extensions/v2/khr_swapchain"
+	"github.com/vkngwrapper/extensions/v3/ext_debug_utils"
+	"github.com/vkngwrapper/extensions/v3/khr_swapchain"
 	"log"
 	"runtime/debug"
 	"time"
@@ -55,7 +55,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Loader, err = core.CreateLoaderFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
+	info.GlobalDriver, err = core.CreateDriverFromProcAddr(sdl.VulkanGetVkGetInstanceProcAddr())
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -88,8 +88,8 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	debugLoader := ext_debug_utils.CreateExtensionFromInstance(info.Instance)
-	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(info.Instance, nil, debugOptions)
+	debugLoader := ext_debug_utils.CreateExtensionDriverFromCoreDriver(info.InstanceDriver)
+	debugMessenger, _, err := debugLoader.CreateDebugUtilsMessenger(nil, debugOptions)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -103,7 +103,7 @@ func main() {
 		log.Fatalln("maxTexelBufferElements too small")
 	}
 
-	props := info.Gpus[0].FormatProperties(core1_0.FormatR32SignedFloat)
+	props := info.InstanceDriver.GetPhysicalDeviceFormatProperties(info.Gpus[0], core1_0.FormatR32SignedFloat)
 	if (props.BufferFeatures & core1_0.FormatFeatureUniformTexelBuffer) == 0 {
 		log.Fatalln("R32_SFLOAT format unsupported for texel buffer")
 	}
@@ -148,7 +148,7 @@ func main() {
 		log.Fatalln("unsized texels")
 	}
 
-	texelBuf, _, err := info.Device.CreateBuffer(nil, core1_0.BufferCreateInfo{
+	texelBuf, _, err := info.DeviceDriver.CreateBuffer(nil, core1_0.BufferCreateInfo{
 		Usage:       core1_0.BufferUsageUniformTexelBuffer,
 		Size:        texelSize,
 		SharingMode: core1_0.SharingModeExclusive,
@@ -157,14 +157,14 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	memReqs := texelBuf.MemoryRequirements()
+	memReqs := info.DeviceDriver.GetBufferMemoryRequirements(texelBuf)
 
 	memoryTypeIndex, err := info.MemoryTypeFromProperties(memReqs.MemoryTypeBits, core1_0.MemoryPropertyHostVisible|core1_0.MemoryPropertyHostCoherent)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	texelMem, _, err := info.Device.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
+	texelMem, _, err := info.DeviceDriver.AllocateMemory(nil, core1_0.MemoryAllocateInfo{
 		AllocationSize:  memReqs.Size,
 		MemoryTypeIndex: memoryTypeIndex,
 	})
@@ -172,7 +172,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	pData, _, err := texelMem.Map(0, memReqs.Size, 0)
+	pData, _, err := info.DeviceDriver.MapMemory(texelMem, 0, memReqs.Size, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -185,14 +185,14 @@ func main() {
 	}
 	copy(memoryBytes, writer.Bytes())
 
-	texelMem.Unmap()
+	info.DeviceDriver.UnmapMemory(texelMem)
 
-	_, err = texelBuf.BindBufferMemory(texelMem, 0)
+	_, err = info.DeviceDriver.BindBufferMemory(texelBuf, texelMem, 0)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	texelView, _, err := info.Device.CreateBufferView(nil, core1_0.BufferViewCreateInfo{
+	texelView, _, err := info.DeviceDriver.CreateBufferView(nil, core1_0.BufferViewCreateInfo{
 		Buffer: texelBuf,
 		Format: core1_0.FormatR32SignedFloat,
 		Offset: 0,
@@ -204,7 +204,7 @@ func main() {
 
 	/* Next take layout bindings and use them to create a descriptor set layout
 	 */
-	descLayout, _, err := info.Device.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
+	descLayout, _, err := info.DeviceDriver.CreateDescriptorSetLayout(nil, core1_0.DescriptorSetLayoutCreateInfo{
 		Bindings: []core1_0.DescriptorSetLayoutBinding{
 			{
 				Binding:         0,
@@ -220,7 +220,7 @@ func main() {
 	info.DescLayout = append(info.DescLayout, descLayout)
 
 	/* Now use the descriptor layout to create a pipeline layout */
-	info.PipelineLayout, _, err = info.Device.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
+	info.PipelineLayout, _, err = info.DeviceDriver.CreatePipelineLayout(nil, core1_0.PipelineLayoutCreateInfo{
 		SetLayouts: info.DescLayout,
 	})
 	if err != nil {
@@ -252,7 +252,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.DescPool, _, err = info.Device.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
+	info.DescPool, _, err = info.DeviceDriver.CreateDescriptorPool(nil, core1_0.DescriptorPoolCreateInfo{
 		MaxSets: 1,
 		PoolSizes: []core1_0.DescriptorPoolSize{
 			{
@@ -266,7 +266,7 @@ func main() {
 	}
 
 	/* Allocate descriptor set with UNIFORM_BUFFER_DYNAMIC */
-	info.DescSet, _, err = info.Device.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
+	info.DescSet, _, err = info.DeviceDriver.AllocateDescriptorSets(core1_0.DescriptorSetAllocateInfo{
 		DescriptorPool: info.DescPool,
 		SetLayouts:     info.DescLayout,
 	})
@@ -274,7 +274,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Device.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
+	err = info.DeviceDriver.UpdateDescriptorSets([]core1_0.WriteDescriptorSet{
 		{
 			DstSet:          info.DescSet[0],
 			DstBinding:      0,
@@ -300,13 +300,13 @@ func main() {
 
 	/* VULKAN_KEY_START */
 
-	info.ImageAcquiredSemaphore, _, err = info.Device.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
+	info.ImageAcquiredSemaphore, _, err = info.DeviceDriver.CreateSemaphore(nil, core1_0.SemaphoreCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
 
 	// Get the index of the next available swapchain image:
-	info.CurrentBuffer, _, err = info.Swapchain.AcquireNextImage(common.NoTimeout, info.ImageAcquiredSemaphore, nil)
+	info.CurrentBuffer, _, err = info.SwapchainExtension.AcquireNextImage(info.Swapchain, common.NoTimeout, &info.ImageAcquiredSemaphore, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -316,7 +316,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	err = info.Cmd.CmdBeginRenderPass(core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
+	err = info.DeviceDriver.CmdBeginRenderPass(info.Cmd, core1_0.SubpassContentsInline, core1_0.RenderPassBeginInfo{
 		RenderPass:  info.RenderPass,
 		Framebuffer: info.Framebuffer[info.CurrentBuffer],
 		RenderArea: core1_0.Rect2D{
@@ -331,22 +331,22 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	info.Cmd.CmdBindPipeline(core1_0.PipelineBindPointGraphics, info.Pipeline)
-	info.Cmd.CmdBindDescriptorSets(core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
+	info.DeviceDriver.CmdBindPipeline(info.Cmd, core1_0.PipelineBindPointGraphics, info.Pipeline)
+	info.DeviceDriver.CmdBindDescriptorSets(info.Cmd, core1_0.PipelineBindPointGraphics, info.PipelineLayout, 0, info.DescSet, nil)
 
 	info.InitViewports()
 	info.InitScissors()
 
-	info.Cmd.CmdDraw(3, 1, 0, 0)
+	info.DeviceDriver.CmdDraw(info.Cmd, 3, 1, 0, 0)
 
-	info.Cmd.CmdEndRenderPass()
+	info.DeviceDriver.CmdEndRenderPass(info.Cmd)
 
-	_, err = info.Cmd.End()
+	_, err = info.DeviceDriver.EndCommandBuffer(info.Cmd)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	drawFence, _, err := info.Device.CreateFence(nil, core1_0.FenceCreateInfo{})
+	drawFence, _, err := info.DeviceDriver.CreateFence(nil, core1_0.FenceCreateInfo{})
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -357,7 +357,7 @@ func main() {
 	}
 
 	for {
-		res, err := drawFence.Wait(utils.FenceTimeout)
+		res, err := info.DeviceDriver.WaitForFences(true, utils.FenceTimeout, drawFence)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -367,7 +367,7 @@ func main() {
 		}
 	}
 
-	drawFence.Destroy(nil)
+	info.DeviceDriver.DestroyFence(drawFence, nil)
 
 	err = info.ExecutePresentImage()
 	if err != nil {
@@ -387,10 +387,10 @@ func main() {
 		}
 	}
 
-	info.ImageAcquiredSemaphore.Destroy(nil)
-	texelView.Destroy(nil)
-	texelBuf.Destroy(nil)
-	texelMem.Free(nil)
+	info.DeviceDriver.DestroySemaphore(info.ImageAcquiredSemaphore, nil)
+	info.DeviceDriver.DestroyBufferView(texelView, nil)
+	info.DeviceDriver.DestroyBuffer(texelBuf, nil)
+	info.DeviceDriver.FreeMemory(texelMem, nil)
 	info.DestroyPipeline()
 	info.DestroyPipelineCache()
 	info.DestroyDescriptorPool()
@@ -407,8 +407,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	info.Surface.Destroy(nil)
-	debugMessenger.Destroy(nil)
+	info.SurfaceDriver.DestroySurface(info.Surface, nil)
+	debugLoader.DestroyDebugUtilsMessenger(debugMessenger, nil)
 	info.DestroyInstance()
 	err = info.Window.Destroy()
 	if err != nil {
