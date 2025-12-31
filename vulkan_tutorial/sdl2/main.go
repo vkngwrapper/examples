@@ -1216,10 +1216,6 @@ func (app *HelloTriangleApplication) findDepthFormat() (core1_0.Format, error) {
 		core1_0.FormatFeatureDepthStencilAttachment)
 }
 
-func hasStencilComponent(format core1_0.Format) bool {
-	return format == core1_0.FormatD32SignedFloatS8UnsignedInt || format == core1_0.FormatD24UnsignedNormalizedS8UnsignedInt
-}
-
 func (app *HelloTriangleApplication) createTextureImage() error {
 	//Put image data into staging buffer
 	imageBytes, err := fileSystem.ReadFile("images/viking_room.png")
