@@ -570,7 +570,7 @@ func main() {
 	cb.Attachments[0].DstColorBlendFactor = core1_0.BlendFactorOne
 	cb.Attachments[0].DstAlphaBlendFactor = core1_0.BlendFactorOne
 
-	if info.Device.IsDeviceExtensionActive(khr_portability_subset.ExtensionName) {
+	if info.DeviceDriver.Device().IsDeviceExtensionActive(khr_portability_subset.ExtensionName) {
 		// Some portability subset devices cannot do constant alpha- support for constant
 		// alpha should really be queried using capabilities in khr_portability_subset, but this is just a sample
 		cb.Attachments[0].SrcColorBlendFactor = core1_0.BlendFactorOne

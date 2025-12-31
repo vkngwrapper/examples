@@ -105,14 +105,12 @@ type HelloTriangleApplication struct {
 	instanceDriver core1_0.CoreInstanceDriver
 	deviceDriver   core1_0.CoreDeviceDriver
 
-	instance         core1_0.Instance
 	debugDriver      ext_debug_utils.ExtensionDriver
 	debugMessenger   ext_debug_utils.DebugUtilsMessenger
 	surfaceExtension khr_surface.ExtensionDriver
 	surface          khr_surface.Surface
 
 	physicalDevice core1_0.PhysicalDevice
-	device         core1_0.Device
 
 	graphicsQueue core1_0.Queue
 	presentQueue  core1_0.Queue
@@ -500,7 +498,7 @@ func (app *HelloTriangleApplication) cleanup() {
 		app.deviceDriver.DestroyCommandPool(app.commandPool, nil)
 	}
 
-	if app.device.Initialized() {
+	if app.deviceDriver != nil {
 		app.deviceDriver.DestroyDevice(nil)
 	}
 
@@ -512,7 +510,7 @@ func (app *HelloTriangleApplication) cleanup() {
 		app.surfaceExtension.DestroySurface(app.surface, nil)
 	}
 
-	if app.instance.Initialized() {
+	if app.instanceDriver != nil {
 		app.instanceDriver.DestroyInstance(nil)
 	}
 
@@ -654,12 +652,7 @@ func (app *HelloTriangleApplication) createInstance() error {
 		instanceOptions.Next = app.debugMessengerOptions()
 	}
 
-	app.instance, _, err = app.globalDriver.CreateInstance(nil, instanceOptions)
-	if err != nil {
-		return err
-	}
-
-	app.instanceDriver, err = app.globalDriver.BuildInstanceDriver(app.instance)
+	app.instanceDriver, _, err = app.globalDriver.CreateInstance(nil, instanceOptions)
 	if err != nil {
 		return err
 	}
@@ -692,7 +685,7 @@ func (app *HelloTriangleApplication) setupDebugMessenger() error {
 
 func (app *HelloTriangleApplication) createSurface() error {
 	app.surfaceExtension = khr_surface.CreateExtensionDriverFromCoreDriver(app.instanceDriver)
-	surface, err := vkng_sdl2.CreateSurface(app.instance, app.surfaceExtension, app.window)
+	surface, err := vkng_sdl2.CreateSurface(app.instanceDriver.Instance(), app.surfaceExtension, app.window)
 	if err != nil {
 		return err
 	}
@@ -759,18 +752,13 @@ func (app *HelloTriangleApplication) createLogicalDevice() error {
 		extensionNames = append(extensionNames, khr_portability_subset.ExtensionName)
 	}
 
-	app.device, _, err = app.instanceDriver.CreateDevice(app.physicalDevice, nil, core1_0.DeviceCreateInfo{
+	app.deviceDriver, _, err = app.instanceDriver.CreateDevice(app.physicalDevice, nil, core1_0.DeviceCreateInfo{
 		QueueCreateInfos: queueFamilyOptions,
 		EnabledFeatures: &core1_0.PhysicalDeviceFeatures{
 			SamplerAnisotropy: true,
 		},
 		EnabledExtensionNames: extensionNames,
 	})
-	if err != nil {
-		return err
-	}
-
-	app.deviceDriver, err = app.instanceDriver.BuildDeviceDriver(app.device)
 	if err != nil {
 		return err
 	}

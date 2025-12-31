@@ -48,12 +48,10 @@ type SampleInfo struct {
 	InstanceExtensionNames      []string
 	InstanceLayerProperties     []*LayerProperties
 	InstanceExtensionProperties []*core1_0.ExtensionProperties
-	Instance                    core1_0.Instance
 
 	DeviceExtensionNames      []string
 	DeviceExtensionProperties []*core1_0.ExtensionProperties
 	Gpus                      []core1_0.PhysicalDevice
-	Device                    core1_0.Device
 	GraphicsQueue             core1_0.Queue
 	PresentQueue              core1_0.Queue
 	GraphicsQueueFamilyIndex  int
@@ -220,7 +218,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 		flags = khr_portability_enumeration.InstanceCreateEnumeratePortability
 	}
 
-	i.Instance, _, err = i.GlobalDriver.CreateInstance(nil, core1_0.InstanceCreateInfo{
+	i.InstanceDriver, _, err = i.GlobalDriver.CreateInstance(nil, core1_0.InstanceCreateInfo{
 		ApplicationName:       appShortName,
 		ApplicationVersion:    common.CreateVersion(0, 0, 1),
 		EngineName:            appShortName,
@@ -233,11 +231,7 @@ func (i *SampleInfo) InitInstance(appShortName string, next common.Options) erro
 			Next: next,
 		},
 	})
-	if err != nil {
-		return err
-	}
 
-	i.InstanceDriver, err = i.GlobalDriver.BuildInstanceDriver(i.Instance)
 	return err
 }
 
@@ -291,7 +285,7 @@ func (i *SampleInfo) InitSwapchainExtension() error {
 	i.SurfaceDriver = khr_surface.CreateExtensionDriverFromCoreDriver(i.InstanceDriver)
 
 	var err error
-	i.Surface, err = vkng_sdl2.CreateSurface(i.Instance, i.SurfaceDriver, i.Window)
+	i.Surface, err = vkng_sdl2.CreateSurface(i.InstanceDriver.Instance(), i.SurfaceDriver, i.Window)
 	if err != nil {
 		return err
 	}
@@ -374,7 +368,7 @@ func (i *SampleInfo) InitDevice() error {
 		i.DeviceExtensionNames = append(i.DeviceExtensionNames, khr_portability_subset.ExtensionName)
 	}
 
-	i.Device, _, err = i.InstanceDriver.CreateDevice(i.Gpus[0], nil, core1_0.DeviceCreateInfo{
+	i.DeviceDriver, _, err = i.InstanceDriver.CreateDevice(i.Gpus[0], nil, core1_0.DeviceCreateInfo{
 		QueueCreateInfos: []core1_0.DeviceQueueCreateInfo{
 			{
 				QueueFamilyIndex: i.GraphicsQueueFamilyIndex,
@@ -383,11 +377,7 @@ func (i *SampleInfo) InitDevice() error {
 		},
 		EnabledExtensionNames: i.DeviceExtensionNames,
 	})
-	if err != nil {
-		return err
-	}
 
-	i.DeviceDriver, err = i.InstanceDriver.BuildDeviceDriver(i.Device)
 	return err
 }
 

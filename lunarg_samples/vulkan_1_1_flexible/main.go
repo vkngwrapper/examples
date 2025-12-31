@@ -64,7 +64,7 @@ func main() {
 			flags = khr_portability_enumeration.InstanceCreateEnumeratePortability
 		}
 
-		instance, _, err := info.GlobalDriver.CreateInstance(nil, core1_0.InstanceCreateInfo{
+		info.InstanceDriver, _, err = info.GlobalDriver.CreateInstance(nil, core1_0.InstanceCreateInfo{
 			ApplicationName:       "vulkan_1_1_sampler",
 			ApplicationVersion:    common.CreateVersion(1, 0, 0),
 			EngineName:            "vulkan_1_1_sampler",
@@ -73,10 +73,6 @@ func main() {
 			EnabledExtensionNames: extensionList,
 			Flags:                 flags,
 		})
-		if err != nil {
-			log.Fatalln(err)
-		}
-		info.InstanceDriver, err = info.GlobalDriver.BuildInstanceDriver(instance)
 		if err != nil {
 			log.Fatalln(err)
 		}
